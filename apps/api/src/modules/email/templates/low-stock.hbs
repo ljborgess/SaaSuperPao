@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alerta de Estoque Baixo</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .header { background: #e67e22; padding: 24px 32px; text-align: center; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 24px; }
+    .body { padding: 32px; color: #333333; }
+    .body p { line-height: 1.6; font-size: 15px; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th { background: #f0f0f0; padding: 10px 12px; text-align: left; font-size: 13px; color: #555; border-bottom: 2px solid #ddd; }
+    td { padding: 10px 12px; font-size: 14px; border-bottom: 1px solid #eee; }
+    .low { color: #c0392b; font-weight: bold; }
+    .footer { padding: 16px 32px; background: #f9f9f9; text-align: center; font-size: 12px; color: #999999; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>SuperPão — Alerta de Estoque</h1>
+    </div>
+    <div class="body">
+      <p>Os seguintes itens estão com estoque abaixo do mínimo e precisam de reposição:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Estoque Atual</th>
+            <th>Estoque Mínimo</th>
+            <th>Unidade</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each items}}
+          <tr>
+            <td>{{this.name}}</td>
+            <td class="low">{{this.currentStock}}</td>
+            <td>{{this.minStock}}</td>
+            <td>{{this.unit}}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      <p>Por favor, realize a reposição o quanto antes para evitar interrupções na produção.</p>
+      <p>Atenciosamente,<br />Equipe SuperPão</p>
+    </div>
+    <div class="footer">
+      <p>Este é um e-mail automático. Por favor, não responda.</p>
+      <p>&copy; {{year}} SuperPão. Todos os direitos reservados.</p>
+    </div>
+  </div>
+</body>
+</html>

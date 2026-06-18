@@ -1,0 +1,5 @@
+{
+  "extends": "@superpao/configs/tsconfig.react.json",
+  "compilerOptions": { "outDir": "./dist", "rootDir": "./src" },
+  "include": ["src/**/*"]
+}

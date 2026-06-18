@@ -1,0 +1,17 @@
+{
+  "name": "@superpao/shared-utils",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@superpao/shared-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@superpao/configs": "workspace:*",
+    "typescript": "^5.7.3"
+  }
+}

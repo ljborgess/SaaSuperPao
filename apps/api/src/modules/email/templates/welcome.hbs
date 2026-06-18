@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bem-vindo ao SuperPão</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .header { background: #c0392b; padding: 24px 32px; text-align: center; }
+    .header h1 { color: #ffffff; margin: 0; font-size: 24px; }
+    .body { padding: 32px; color: #333333; }
+    .body p { line-height: 1.6; font-size: 15px; }
+    .btn { display: inline-block; margin: 24px 0; padding: 14px 28px; background: #c0392b; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: bold; }
+    .footer { padding: 16px 32px; background: #f9f9f9; text-align: center; font-size: 12px; color: #999999; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>SuperPão</h1>
+    </div>
+    <div class="body">
+      <p>Olá, <strong>{{name}}</strong>!</p>
+      <p>Seja bem-vindo(a) ao <strong>SuperPão</strong> — o sistema de gestão da sua padaria!</p>
+      <p>Sua conta foi criada com sucesso. Acesse o sistema clicando no botão abaixo e comece a gerenciar sua padaria de forma simples e eficiente.</p>
+      <a href="{{loginUrl}}" class="btn">Acessar o Sistema</a>
+      <p>Se tiver dúvidas, entre em contato com o administrador do sistema.</p>
+      <p>Atenciosamente,<br />Equipe SuperPão</p>
+    </div>
+    <div class="footer">
+      <p>Este é um e-mail automático. Por favor, não responda.</p>
+      <p>&copy; {{year}} SuperPão. Todos os direitos reservados.</p>
+    </div>
+  </div>
+</body>
+</html>

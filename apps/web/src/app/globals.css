@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 36 33% 97%;
+    --foreground: 20 40% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 40% 12%;
+    --primary: 25 50% 28%;
+    --primary-foreground: 36 33% 97%;
+    --muted: 36 20% 92%;
+    --muted-foreground: 25 15% 45%;
+    --border: 36 25% 88%;
+    --ring: 25 50% 28%;
+  }
+
+  * {
+    @apply border-surface-300;
+  }
+
+  html {
+    @apply antialiased scroll-smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-surface-100 text-brand-900 font-sans;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-brand-300/60 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-400/80;
+  }
+}
+
+/* Landing scroll animations */
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scroll-animate.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@layer components {
+  .input-base {
+    @apply w-full px-3.5 py-2.5 text-sm text-brand-900 bg-white border border-surface-300 rounded-xl
+           placeholder:text-brand-300 transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400;
+  }
+
+  .table-head {
+    @apply text-left px-5 py-3.5 text-[11px] font-semibold text-brand-400 uppercase tracking-wider;
+  }
+
+  .table-cell {
+    @apply px-5 py-4 text-sm text-brand-800;
+  }
+}
