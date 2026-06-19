@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
     "@mikro-orm/core": "^6.4.2",
     "@mikro-orm/migrations": "^6.4.2",
     "@mikro-orm/nestjs": "^6.0.2",
@@ -32,6 +33,7 @@
     "handlebars": "^4.7.8",
     "helmet": "^8.2.0",
     "nodemailer": "^6.9.16",
+    "openai": "^6.44.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",

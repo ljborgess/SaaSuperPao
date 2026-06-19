@@ -5,7 +5,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { PageHeader } from '@/components/layout/page-header'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Package, ChefHat, ChevronDown, ChevronUp, X, Cake, Coffee, Sandwich, Cookie, Wheat, Apple, ShoppingBag, Tag, AlertTriangle, Lock } from 'lucide-react'
+import {
+  Plus, Pencil, Trash2, Package, ChefHat, ChevronDown, ChevronUp,
+  X, AlertTriangle, Lock, Settings2,
+} from 'lucide-react'
 import { formatCurrency } from '@superpao/shared-utils'
 import type { ProductDto, ProductUnit, CategoryDto, PaginatedResponse } from '@superpao/shared-types'
 import type { RecipeDto, CreateRecipeDto, CreateRecipeItemDto } from '@superpao/shared-types'
@@ -122,10 +125,7 @@ function RecipePanel({ product }: { product: ProductDto }) {
       <div className="px-6 py-5 bg-surface-50 border-t border-surface-100">
         <div className="flex items-center justify-between">
           <p className="text-sm text-brand-400">Este produto não possui receita cadastrada.</p>
-          <Button
-            size="sm"
-            onClick={() => setCreateForm({ yieldQty: '1', yieldUnit: product.unit, instructions: '' })}
-          >
+          <Button size="sm" onClick={() => setCreateForm({ yieldQty: '1', yieldUnit: product.unit, instructions: '' })}>
             <Plus size={14} />
             Criar receita
           </Button>
@@ -139,41 +139,13 @@ function RecipePanel({ product }: { product: ProductDto }) {
       <div className="px-6 py-5 bg-surface-50 border-t border-surface-100">
         <h4 className="text-sm font-semibold text-brand-900 mb-3">Nova receita para {product.name}</h4>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            placeholder="Rendimento *"
-            className="input-base"
-            value={createForm.yieldQty}
-            onChange={(e) => setCreateForm(f => f && ({ ...f, yieldQty: e.target.value }))}
-          />
-          <input
-            placeholder="Unidade do rendimento *"
-            className="input-base"
-            value={createForm.yieldUnit}
-            onChange={(e) => setCreateForm(f => f && ({ ...f, yieldUnit: e.target.value }))}
-          />
-          <input
-            placeholder="Instruções (opcional)"
-            className="input-base sm:col-span-1"
-            value={createForm.instructions}
-            onChange={(e) => setCreateForm(f => f && ({ ...f, instructions: e.target.value }))}
-          />
+          <input type="number" min="0.01" step="0.01" placeholder="Rendimento *" className="input-base" value={createForm.yieldQty} onChange={(e) => setCreateForm(f => f && ({ ...f, yieldQty: e.target.value }))} />
+          <input placeholder="Unidade do rendimento *" className="input-base" value={createForm.yieldUnit} onChange={(e) => setCreateForm(f => f && ({ ...f, yieldUnit: e.target.value }))} />
+          <input placeholder="Instruções (opcional)" className="input-base sm:col-span-1" value={createForm.instructions} onChange={(e) => setCreateForm(f => f && ({ ...f, instructions: e.target.value }))} />
         </div>
         <div className="flex gap-2 justify-end">
           <Button type="button" variant="ghost" size="sm" onClick={() => setCreateForm(null)}>Cancelar</Button>
-          <Button
-            size="sm"
-            disabled={createRecipeMutation.isPending}
-            onClick={() => createRecipeMutation.mutate({
-              productId: product.id,
-              yieldQty: parseFloat(createForm.yieldQty),
-              yieldUnit: createForm.yieldUnit,
-              instructions: createForm.instructions || undefined,
-              items: [],
-            })}
-          >
+          <Button size="sm" disabled={createRecipeMutation.isPending} onClick={() => createRecipeMutation.mutate({ productId: product.id, yieldQty: parseFloat(createForm.yieldQty), yieldUnit: createForm.yieldUnit, instructions: createForm.instructions || undefined, items: [] })}>
             {createRecipeMutation.isPending ? 'Criando...' : 'Criar'}
           </Button>
         </div>
@@ -190,38 +162,13 @@ function RecipePanel({ product }: { product: ProductDto }) {
           <div className="mb-4">
             <h4 className="text-sm font-semibold text-brand-900 mb-3">Editar receita</h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="Rendimento"
-                className="input-base"
-                value={recipeForm.yieldQty}
-                onChange={(e) => setRecipeForm(f => f && ({ ...f, yieldQty: e.target.value }))}
-              />
-              <input
-                placeholder="Unidade"
-                className="input-base"
-                value={recipeForm.yieldUnit}
-                onChange={(e) => setRecipeForm(f => f && ({ ...f, yieldUnit: e.target.value }))}
-              />
-              <input
-                placeholder="Instruções"
-                className="input-base"
-                value={recipeForm.instructions}
-                onChange={(e) => setRecipeForm(f => f && ({ ...f, instructions: e.target.value }))}
-              />
+              <input type="number" min="0.01" step="0.01" placeholder="Rendimento" className="input-base" value={recipeForm.yieldQty} onChange={(e) => setRecipeForm(f => f && ({ ...f, yieldQty: e.target.value }))} />
+              <input placeholder="Unidade" className="input-base" value={recipeForm.yieldUnit} onChange={(e) => setRecipeForm(f => f && ({ ...f, yieldUnit: e.target.value }))} />
+              <input placeholder="Instruções" className="input-base" value={recipeForm.instructions} onChange={(e) => setRecipeForm(f => f && ({ ...f, instructions: e.target.value }))} />
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" onClick={() => setRecipeForm(null)}>Cancelar</Button>
-              <Button
-                size="sm"
-                disabled={updateRecipeMutation.isPending}
-                onClick={() => updateRecipeMutation.mutate({
-                  id: recipe.id,
-                  dto: { yieldQty: parseFloat(recipeForm.yieldQty), yieldUnit: recipeForm.yieldUnit, instructions: recipeForm.instructions || undefined },
-                })}
-              >
+              <Button size="sm" disabled={updateRecipeMutation.isPending} onClick={() => updateRecipeMutation.mutate({ id: recipe.id, dto: { yieldQty: parseFloat(recipeForm.yieldQty), yieldUnit: recipeForm.yieldUnit, instructions: recipeForm.instructions || undefined } })}>
                 Salvar
               </Button>
             </div>
@@ -232,36 +179,19 @@ function RecipePanel({ product }: { product: ProductDto }) {
               <p className="text-sm text-brand-600">
                 <span className="font-medium">Rendimento:</span> {recipe.yieldQty} {recipe.yieldUnit}
               </p>
-              {recipe.instructions && (
-                <p className="text-xs text-brand-400 mt-0.5">{recipe.instructions}</p>
-              )}
+              {recipe.instructions && <p className="text-xs text-brand-400 mt-0.5">{recipe.instructions}</p>}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-brand-500 font-medium">
                 Custo calculado: <span className="text-brand-900 font-semibold">{formatCurrency(calculatedCost)}</span>/{recipe.yieldUnit}
               </span>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={calculatedCost === 0 || applyToCostMutation.isPending}
-                onClick={() => applyToCostMutation.mutate({ costPrice: calculatedCost })}
-              >
+              <Button size="sm" variant="ghost" disabled={calculatedCost === 0 || applyToCostMutation.isPending} onClick={() => applyToCostMutation.mutate({ costPrice: calculatedCost })}>
                 Aplicar ao produto
               </Button>
-              <Button
-                variant="icon"
-                size="icon"
-                onClick={() => setRecipeForm({ yieldQty: String(recipe.yieldQty), yieldUnit: recipe.yieldUnit, instructions: recipe.instructions ?? '' })}
-              >
+              <Button variant="icon" size="icon" onClick={() => setRecipeForm({ yieldQty: String(recipe.yieldQty), yieldUnit: recipe.yieldUnit, instructions: recipe.instructions ?? '' })}>
                 <Pencil size={13} />
               </Button>
-              <Button
-                variant="icon"
-                size="icon"
-                className="hover:text-red-500 hover:bg-red-50"
-                onClick={() => deleteRecipeMutation.mutate(recipe.id)}
-                disabled={deleteRecipeMutation.isPending}
-              >
+              <Button variant="icon" size="icon" className="hover:text-red-500 hover:bg-red-50" onClick={() => deleteRecipeMutation.mutate(recipe.id)} disabled={deleteRecipeMutation.isPending}>
                 <Trash2 size={13} />
               </Button>
             </div>
@@ -281,9 +211,7 @@ function RecipePanel({ product }: { product: ProductDto }) {
           </thead>
           <tbody>
             {recipe.items.length === 0 && (
-              <tr>
-                <td colSpan={6} className="py-3 text-center text-xs text-brand-400">Nenhum ingrediente. Adicione abaixo.</td>
-              </tr>
+              <tr><td colSpan={6} className="py-3 text-center text-xs text-brand-400">Nenhum ingrediente. Adicione abaixo.</td></tr>
             )}
             {recipe.items.map((item) => (
               <tr key={item.id} className="border-b border-surface-100 group">
@@ -291,14 +219,9 @@ function RecipePanel({ product }: { product: ProductDto }) {
                 <td className="py-2 text-right">{Number(item.quantity)}</td>
                 <td className="py-2 pl-2 text-brand-500">{item.unit}</td>
                 <td className="py-2 text-right text-brand-500">{formatCurrency(Number(item.ingredient.costPrice))}</td>
-                <td className="py-2 text-right font-medium">
-                  {formatCurrency(Number(item.ingredient.costPrice) * Number(item.quantity))}
-                </td>
+                <td className="py-2 text-right font-medium">{formatCurrency(Number(item.ingredient.costPrice) * Number(item.quantity))}</td>
                 <td className="py-2">
-                  <button
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 hover:text-red-500 transition-all"
-                    onClick={() => removeItemMutation.mutate({ recipeId: recipe.id, itemId: item.id })}
-                  >
+                  <button className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-50 hover:text-red-500 transition-all" onClick={() => removeItemMutation.mutate({ recipeId: recipe.id, itemId: item.id })}>
                     <X size={12} />
                   </button>
                 </td>
@@ -309,44 +232,15 @@ function RecipePanel({ product }: { product: ProductDto }) {
 
         {showNewItemForm ? (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 items-end">
-            <select
-              className="input-base sm:col-span-2"
-              value={newItem.ingredientId}
-              onChange={(e) => {
-                const ing = ingredients.find((i) => i.id === e.target.value)
-                setNewItem(f => ({ ...f, ingredientId: e.target.value, unit: ing?.unit ?? f.unit }))
-              }}
-            >
+            <select className="input-base sm:col-span-2" value={newItem.ingredientId} onChange={(e) => { const ing = ingredients.find((i) => i.id === e.target.value); setNewItem(f => ({ ...f, ingredientId: e.target.value, unit: ing?.unit ?? f.unit })) }}>
               <option value="">Selecionar ingrediente...</option>
-              {ingredients.map((i) => (
-                <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>
-              ))}
+              {ingredients.map((i) => <option key={i.id} value={i.id}>{i.name} ({i.unit})</option>)}
             </select>
-            <input
-              type="number"
-              min="0.001"
-              step="0.001"
-              placeholder="Quantidade"
-              className="input-base"
-              value={newItem.quantity}
-              onChange={(e) => setNewItem(f => ({ ...f, quantity: e.target.value }))}
-            />
-            <input
-              placeholder="Unidade"
-              className="input-base"
-              value={newItem.unit}
-              onChange={(e) => setNewItem(f => ({ ...f, unit: e.target.value }))}
-            />
+            <input type="number" min="0.001" step="0.001" placeholder="Quantidade" className="input-base" value={newItem.quantity} onChange={(e) => setNewItem(f => ({ ...f, quantity: e.target.value }))} />
+            <input placeholder="Unidade" className="input-base" value={newItem.unit} onChange={(e) => setNewItem(f => ({ ...f, unit: e.target.value }))} />
             <div className="flex gap-2 col-span-3 sm:col-span-4 justify-end">
               <Button variant="ghost" size="sm" onClick={() => { setShowNewItemForm(false); setNewItem(EMPTY_ITEM) }}>Cancelar</Button>
-              <Button
-                size="sm"
-                disabled={!newItem.ingredientId || !newItem.quantity || addItemMutation.isPending}
-                onClick={() => addItemMutation.mutate({
-                  recipeId: recipe.id,
-                  dto: { ingredientId: newItem.ingredientId, quantity: parseFloat(newItem.quantity), unit: newItem.unit },
-                })}
-              >
+              <Button size="sm" disabled={!newItem.ingredientId || !newItem.quantity || addItemMutation.isPending} onClick={() => addItemMutation.mutate({ recipeId: recipe.id, dto: { ingredientId: newItem.ingredientId, quantity: parseFloat(newItem.quantity), unit: newItem.unit } })}>
                 {addItemMutation.isPending ? 'Adicionando...' : 'Adicionar'}
               </Button>
             </div>
@@ -362,188 +256,7 @@ function RecipePanel({ product }: { product: ProductDto }) {
   )
 }
 
-type CategoryGroup = {
-  id: string | null
-  name: string
-  products: ProductDto[]
-}
-
-const CATEGORY_ICONS: Record<string, React.ElementType> = {
-  bolo: Cake,
-  bolos: Cake,
-  brioche: Wheat,
-  brioches: Wheat,
-  pão: Wheat,
-  paes: Wheat,
-  pães: Wheat,
-  bebida: Coffee,
-  bebidas: Coffee,
-  salgado: Sandwich,
-  salgados: Sandwich,
-  biscoito: Cookie,
-  biscoitos: Cookie,
-  cookie: Cookie,
-  cookies: Cookie,
-  fruta: Apple,
-  frutas: Apple,
-  especial: ShoppingBag,
-  especiais: ShoppingBag,
-}
-
-function getCategoryIcon(name: string): React.ElementType {
-  const key = name.toLowerCase().trim()
-  for (const [k, Icon] of Object.entries(CATEGORY_ICONS)) {
-    if (key.includes(k)) return Icon
-  }
-  return Tag
-}
-
-
-function CategorySection({
-  group,
-  recipesSet,
-  expandedRecipe,
-  onToggleRecipe,
-  onEdit,
-  onDelete,
-}: {
-  group: CategoryGroup
-  recipesSet: Set<string>
-  expandedRecipe: string | null
-  onToggleRecipe: (id: string) => void
-  onEdit: (p: ProductDto) => void
-  onDelete: (id: string) => void
-}) {
-  const [collapsed, setCollapsed] = useState(false)
-  const Icon = getCategoryIcon(group.name)
-  const missingRecipes = group.products.filter(p => !recipesSet.has(p.id)).length
-
-  return (
-    <div className="flex flex-col rounded-xl border border-surface-200 overflow-hidden shadow-sm">
-      <button
-        className="flex items-center gap-3 px-5 py-4 bg-surface-50 border-b border-surface-200 hover:bg-surface-100/60 transition-colors text-left w-full"
-        onClick={() => setCollapsed(c => !c)}
-      >
-        <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-100 text-brand-500 shrink-0">
-          <Icon size={16} />
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-brand-900 leading-tight truncate">{group.name}</p>
-          <p className="text-xs text-brand-400 font-normal mt-0.5">
-            {group.products.length} produto{group.products.length !== 1 ? 's' : ''}
-            {missingRecipes > 0 && (
-              <span className="ml-2 inline-flex items-center gap-1 text-amber-500">
-                <AlertTriangle size={10} />
-                {missingRecipes} sem receita
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="text-brand-400 shrink-0">
-          {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-        </div>
-      </button>
-
-      {!collapsed && (
-        <div className="overflow-x-auto bg-white">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-surface-100 bg-surface-50/60">
-                <th className="table-head text-xs">Código</th>
-                <th className="table-head text-xs">Nome</th>
-                <th className="table-head text-xs text-right">Custo</th>
-                <th className="table-head text-xs text-right">Venda</th>
-                <th className="table-head text-xs text-right">Estoque</th>
-                <th className="table-head text-xs text-center">Status</th>
-                <th className="w-24" />
-              </tr>
-            </thead>
-            <tbody>
-              {group.products.map((p, i) => {
-                const hasRecipe = recipesSet.has(p.id)
-                return (
-                  <React.Fragment key={p.id}>
-                    <tr
-                      className={cn(
-                        'hover:bg-surface-50/80 transition-colors group',
-                        (expandedRecipe !== p.id && i < group.products.length - 1) && 'border-b border-surface-100',
-                      )}
-                    >
-                      <td className="table-cell text-xs text-brand-400 font-mono">{p.code}</td>
-                      <td className="table-cell">
-                        <span className="font-semibold">{p.name}</span>
-                      </td>
-                      <td className="table-cell text-right text-brand-500 text-xs">{formatCurrency(p.costPrice)}</td>
-                      <td className="table-cell text-right font-semibold">{formatCurrency(p.salePrice)}</td>
-                      <td className="table-cell text-right">
-                        <span className={cn('font-semibold', p.currentStock <= p.minStock ? 'text-red-500' : 'text-brand-800')}>
-                          {p.currentStock}
-                        </span>
-                        <span className="text-xs text-brand-400 ml-1">{p.unit}</span>
-                      </td>
-                      <td className="table-cell text-center">
-                        <Badge variant={p.status === 'ACTIVE' ? 'success' : 'neutral'}>
-                          {p.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                      </td>
-                      <td className="table-cell">
-                        <div className="flex items-center gap-0.5 justify-end">
-                          <Button
-                            variant="icon"
-                            size="icon"
-                            onClick={() => onToggleRecipe(p.id)}
-                            aria-label="Receita"
-                            title={!hasRecipe ? 'Receita pendente — clique para cadastrar' : 'Receita'}
-                            className={cn(
-                              'opacity-0 group-hover:opacity-100 transition-opacity',
-                              expandedRecipe === p.id && 'text-brand-600 bg-brand-50 !opacity-100',
-                              !hasRecipe && 'text-amber-500 !opacity-100',
-                            )}
-                          >
-                            {expandedRecipe === p.id ? <ChevronUp size={14} /> : <ChefHat size={14} />}
-                          </Button>
-                          <Button
-                            variant="icon"
-                            size="icon"
-                            onClick={() => hasRecipe && onEdit(p)}
-                            aria-label={hasRecipe ? 'Editar' : 'Cadastre a receita primeiro'}
-                            title={hasRecipe ? undefined : 'Cadastre a receita primeiro'}
-                            className={cn(!hasRecipe && 'opacity-30 cursor-not-allowed')}
-                          >
-                            {hasRecipe ? <Pencil size={14} /> : <Lock size={14} />}
-                          </Button>
-                          <Button
-                            variant="icon"
-                            size="icon"
-                            onClick={() => hasRecipe && onDelete(p.id)}
-                            aria-label={hasRecipe ? 'Excluir' : 'Cadastre a receita primeiro'}
-                            title={hasRecipe ? undefined : 'Cadastre a receita primeiro'}
-                            className={cn(
-                              hasRecipe ? 'hover:text-red-500 hover:bg-red-50' : 'opacity-30 cursor-not-allowed',
-                            )}
-                          >
-                            {hasRecipe ? <Trash2 size={14} /> : <Lock size={14} />}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                    {expandedRecipe === p.id && (
-                      <tr className="border-b border-surface-100">
-                        <td colSpan={7} className="p-0">
-                          <RecipePanel product={p} />
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  )
-}
+type CategoryGroup = { id: string | null; name: string; products: ProductDto[] }
 
 export default function ProdutosPage() {
   const qc = useQueryClient()
@@ -552,6 +265,7 @@ export default function ProdutosPage() {
   const [editing, setEditing] = useState<ProductDto | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
   const [expandedRecipe, setExpandedRecipe] = useState<string | null>(null)
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
 
   const { data, isLoading } = useQuery<PaginatedResponse<ProductDto>>({
     queryKey: ['products-all', search],
@@ -573,19 +287,11 @@ export default function ProdutosPage() {
   const categoryGroups = useMemo<CategoryGroup[]>(() => {
     const products = data?.data ?? []
     const map = new Map<string, CategoryGroup>()
-
     for (const p of products) {
       const key = p.category?.id ?? '__none__'
-      if (!map.has(key)) {
-        map.set(key, {
-          id: p.category?.id ?? null,
-          name: p.category?.name ?? 'Sem categoria',
-          products: [],
-        })
-      }
+      if (!map.has(key)) map.set(key, { id: p.category?.id ?? null, name: p.category?.name ?? 'Sem categoria', products: [] })
       map.get(key)!.products.push(p)
     }
-
     const groups = Array.from(map.values())
     const none = groups.find(g => g.id === null)
     const rest = groups.filter(g => g.id !== null).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
@@ -594,9 +300,7 @@ export default function ProdutosPage() {
 
   const saveMutation = useMutation({
     mutationFn: (payload: object) =>
-      editing
-        ? api.patch(`/api/products/${editing.id}`, payload)
-        : api.post('/api/products', payload),
+      editing ? api.patch(`/api/products/${editing.id}`, payload) : api.post('/api/products', payload),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['products-all'] })
       if (!editing) {
@@ -624,13 +328,8 @@ export default function ProdutosPage() {
   function openForm(product?: ProductDto) {
     setEditing(product ?? null)
     setForm(product ? {
-      name: product.name,
-      code: product.code,
-      categoryId: product.category?.id ?? '',
-      unit: product.unit,
-      costPrice: String(product.costPrice),
-      salePrice: String(product.salePrice),
-      minStock: String(product.minStock),
+      name: product.name, code: product.code, categoryId: product.category?.id ?? '',
+      unit: product.unit, costPrice: String(product.costPrice), salePrice: String(product.salePrice), minStock: String(product.minStock),
     } : EMPTY)
     setShowForm(true)
   }
@@ -644,11 +343,8 @@ export default function ProdutosPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const payload: Record<string, unknown> = {
-      name: form.name,
-      code: form.code,
-      unit: form.unit,
-      costPrice: parseFloat(form.costPrice),
-      salePrice: parseFloat(form.salePrice),
+      name: form.name, code: form.code, unit: form.unit,
+      costPrice: parseFloat(form.costPrice), salePrice: parseFloat(form.salePrice),
     }
     if (form.categoryId) payload.categoryId = form.categoryId
     if (form.minStock) payload.minStock = parseInt(form.minStock, 10)
@@ -657,6 +353,14 @@ export default function ProdutosPage() {
 
   function toggleRecipe(productId: string) {
     setExpandedRecipe(prev => prev === productId ? null : productId)
+  }
+
+  function toggleCategory(catKey: string) {
+    setCollapsedCategories(prev => {
+      const next = new Set(prev)
+      next.has(catKey) ? next.delete(catKey) : next.add(catKey)
+      return next
+    })
   }
 
   const totalProducts = data?.total ?? 0
@@ -677,19 +381,13 @@ export default function ProdutosPage() {
       {/* Drawer overlay */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex">
-          <div
-            className="flex-1 bg-black/30 backdrop-blur-[1px]"
-            onClick={closeForm}
-          />
+          <div className="flex-1 bg-black/30 backdrop-blur-[1px]" onClick={closeForm} />
           <div className="w-full max-w-md bg-white shadow-2xl flex flex-col animate-slide-left h-full overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-5 border-b border-surface-200">
               <h3 className="text-base font-semibold text-brand-900">
                 {editing ? 'Editar produto' : 'Novo produto'}
               </h3>
-              <button
-                onClick={closeForm}
-                className="p-1.5 rounded-lg text-brand-400 hover:text-brand-700 hover:bg-surface-100 transition-colors"
-              >
+              <button onClick={closeForm} className="p-1.5 rounded-lg text-brand-400 hover:text-brand-700 hover:bg-surface-100 transition-colors">
                 <X size={16} />
               </button>
             </div>
@@ -697,93 +395,41 @@ export default function ProdutosPage() {
             <form onSubmit={handleSubmit} className="flex-1 flex flex-col px-6 py-5 gap-4">
               <div>
                 <label className="block text-xs font-medium text-brand-500 mb-1.5">Nome *</label>
-                <input
-                  required
-                  placeholder="Ex: Pão Francês"
-                  className="input-base w-full"
-                  value={form.name}
-                  onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-                />
+                <input required placeholder="Ex: Pão Francês" className="input-base w-full" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} />
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-brand-500 mb-1.5">Código *</label>
-                  <input
-                    required
-                    placeholder="Ex: PAO-001"
-                    className="input-base w-full"
-                    value={form.code}
-                    onChange={(e) => setForm(f => ({ ...f, code: e.target.value }))}
-                  />
+                  <input required placeholder="Ex: PAO-001" className="input-base w-full" value={form.code} onChange={(e) => setForm(f => ({ ...f, code: e.target.value }))} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-brand-500 mb-1.5">Unidade</label>
-                  <select
-                    className="input-base w-full"
-                    value={form.unit}
-                    onChange={(e) => setForm(f => ({ ...f, unit: e.target.value as ProductUnit }))}
-                  >
+                  <select className="input-base w-full" value={form.unit} onChange={(e) => setForm(f => ({ ...f, unit: e.target.value as ProductUnit }))}>
                     {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
                   </select>
                 </div>
               </div>
-
               <div>
                 <label className="block text-xs font-medium text-brand-500 mb-1.5">Categoria</label>
-                <select
-                  className="input-base w-full"
-                  value={form.categoryId}
-                  onChange={(e) => setForm(f => ({ ...f, categoryId: e.target.value }))}
-                >
+                <select className="input-base w-full" value={form.categoryId} onChange={(e) => setForm(f => ({ ...f, categoryId: e.target.value }))}>
                   <option value="">Sem categoria</option>
-                  {categories?.data.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
+                  {categories?.data.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                 </select>
               </div>
-
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-brand-500 mb-1.5">Custo *</label>
-                  <input
-                    required
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0,00"
-                    className="input-base w-full"
-                    value={form.costPrice}
-                    onChange={(e) => setForm(f => ({ ...f, costPrice: e.target.value }))}
-                  />
+                  <input required type="number" step="0.01" min="0" placeholder="0,00" className="input-base w-full" value={form.costPrice} onChange={(e) => setForm(f => ({ ...f, costPrice: e.target.value }))} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-brand-500 mb-1.5">Venda *</label>
-                  <input
-                    required
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0,00"
-                    className="input-base w-full"
-                    value={form.salePrice}
-                    onChange={(e) => setForm(f => ({ ...f, salePrice: e.target.value }))}
-                  />
+                  <input required type="number" step="0.01" min="0" placeholder="0,00" className="input-base w-full" value={form.salePrice} onChange={(e) => setForm(f => ({ ...f, salePrice: e.target.value }))} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-brand-500 mb-1.5">Estoque mín.</label>
-                  <input
-                    type="number"
-                    step="1"
-                    min="0"
-                    placeholder="0"
-                    className="input-base w-full"
-                    value={form.minStock}
-                    onChange={(e) => setForm(f => ({ ...f, minStock: e.target.value }))}
-                  />
+                  <input type="number" step="1" min="0" placeholder="0" className="input-base w-full" value={form.minStock} onChange={(e) => setForm(f => ({ ...f, minStock: e.target.value }))} />
                 </div>
               </div>
-
               <div className="mt-auto pt-4 flex gap-2 justify-end border-t border-surface-100">
                 <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
                 <Button type="submit" disabled={saveMutation.isPending}>
@@ -797,39 +443,130 @@ export default function ProdutosPage() {
 
       <Card>
         <div className="px-6 py-4 border-b border-surface-200 flex items-center gap-4">
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Buscar por nome ou código..."
-          />
+          <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nome ou código..." />
           {totalProducts > 0 && (
-            <span className="text-xs text-brand-400 shrink-0">
-              {totalProducts} produto{totalProducts !== 1 ? 's' : ''}
-            </span>
+            <span className="text-xs text-brand-400 shrink-0">{totalProducts} produto{totalProducts !== 1 ? 's' : ''}</span>
           )}
         </div>
 
         {isLoading ? (
           <LoadingState icon={Package} message="Carregando produtos..." />
         ) : categoryGroups.length === 0 ? (
-          <EmptyState
-            icon={Package}
-            title="Nenhum produto encontrado"
-            description="Cadastre seu primeiro produto para começar."
-          />
+          <EmptyState icon={Package} title="Nenhum produto encontrado" description="Cadastre seu primeiro produto para começar." />
         ) : (
-          <div className="p-5 grid grid-cols-1 xl:grid-cols-2 gap-5">
-            {categoryGroups.map((group) => (
-              <CategorySection
-                key={group.id ?? '__none__'}
-                group={group}
-                recipesSet={recipesSet}
-                expandedRecipe={expandedRecipe}
-                onToggleRecipe={toggleRecipe}
-                onEdit={openForm}
-                onDelete={(id) => deleteMutation.mutate(id)}
-              />
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-200 bg-surface-50/60">
+                  <th className="table-head text-xs">Código</th>
+                  <th className="table-head text-xs">Nome</th>
+                  <th className="table-head text-xs text-right">Custo</th>
+                  <th className="table-head text-xs text-right">Venda</th>
+                  <th className="table-head text-xs text-right">Estoque</th>
+                  <th className="table-head text-xs text-center">Status</th>
+                  <th className="w-24" />
+                </tr>
+              </thead>
+              <tbody>
+                {categoryGroups.map((group) => {
+                  const catKey = group.id ?? '__none__'
+                  const collapsed = collapsedCategories.has(catKey)
+                  const missingRecipes = group.products.filter(p => !recipesSet.has(p.id)).length
+
+                  return (
+                    <React.Fragment key={catKey}>
+                      {/* Category separator row */}
+                      <tr
+                        className="bg-surface-50 border-y border-surface-200 cursor-pointer hover:bg-surface-100/80 transition-colors"
+                        onClick={() => toggleCategory(catKey)}
+                      >
+                        <td colSpan={7} className="px-5 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-brand-700 uppercase tracking-wider">{group.name}</span>
+                            <span className="text-xs text-brand-400">{group.products.length} produto{group.products.length !== 1 ? 's' : ''}</span>
+                            {missingRecipes > 0 && (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 font-medium">
+                                <AlertTriangle size={10} />{missingRecipes} sem receita
+                              </span>
+                            )}
+                            <span className="ml-auto text-brand-400">
+                              {collapsed ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Product rows */}
+                      {!collapsed && group.products.map((p) => {
+                        const hasRecipe = recipesSet.has(p.id)
+                        return (
+                          <React.Fragment key={p.id}>
+                            <tr className="hover:bg-surface-50/80 transition-colors group border-b border-surface-100">
+                              <td className="table-cell text-xs text-brand-400 font-mono">{p.code}</td>
+                              <td className="table-cell font-semibold">{p.name}</td>
+                              <td className="table-cell text-right text-brand-500 text-xs">{formatCurrency(p.costPrice)}</td>
+                              <td className="table-cell text-right font-semibold">{formatCurrency(p.salePrice)}</td>
+                              <td className="table-cell text-right">
+                                <span className={cn('font-semibold', p.currentStock <= p.minStock ? 'text-red-500' : 'text-brand-800')}>
+                                  {p.currentStock}
+                                </span>
+                                <span className="text-xs text-brand-400 ml-1">{p.unit}</span>
+                              </td>
+                              <td className="table-cell text-center">
+                                <Badge variant={p.status === 'ACTIVE' ? 'success' : 'neutral'}>
+                                  {p.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+                                </Badge>
+                              </td>
+                              <td className="table-cell">
+                                <div className="flex items-center gap-0.5 justify-end">
+                                  <Button
+                                    variant="icon" size="icon"
+                                    onClick={() => toggleRecipe(p.id)}
+                                    title={!hasRecipe ? 'Receita pendente — clique para cadastrar' : 'Receita'}
+                                    className={cn(
+                                      'opacity-0 group-hover:opacity-100 transition-opacity',
+                                      expandedRecipe === p.id && 'text-brand-600 bg-brand-50 !opacity-100',
+                                      !hasRecipe && 'text-amber-500 !opacity-100',
+                                    )}
+                                  >
+                                    {expandedRecipe === p.id ? <ChevronUp size={14} /> : <ChefHat size={14} />}
+                                  </Button>
+                                  <Button
+                                    variant="icon" size="icon"
+                                    onClick={() => openForm(p)}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <Settings2 size={14} />
+                                  </Button>
+                                  <Button
+                                    variant="icon" size="icon"
+                                    onClick={() => hasRecipe && deleteMutation.mutate(p.id)}
+                                    title={hasRecipe ? undefined : 'Cadastre a receita primeiro'}
+                                    className={cn(
+                                      'opacity-0 group-hover:opacity-100 transition-opacity',
+                                      hasRecipe ? 'hover:text-red-500 hover:bg-red-50' : 'opacity-30 cursor-not-allowed',
+                                    )}
+                                  >
+                                    {hasRecipe ? <Trash2 size={14} /> : <Lock size={14} />}
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                            {expandedRecipe === p.id && (
+                              <tr className="border-b border-surface-100">
+                                <td colSpan={7} className="p-0">
+                                  <RecipePanel product={p} />
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        )
+                      })}
+                    </React.Fragment>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </Card>

@@ -13,6 +13,6 @@ export class AiController {
 
   @Post('chat')
   chat(@Body() body: ChatRequest) {
-    return this.service.chat(body.message, body.history ?? [])
+    return this.service.chat(body.message, body.history ?? [], body.provider, body.apiKey, body.model)
   }
 }
