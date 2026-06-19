@@ -1,6 +1,6 @@
 export interface RecipeItemDto {
   id: string
-  ingredient: { id: string; name: string; unit: string }
+  ingredient: { id: string; name: string; unit: string; costPrice: number }
   quantity: number
   unit: string
 }
@@ -13,6 +13,7 @@ export interface RecipeDto {
   instructions?: string
   items: RecipeItemDto[]
   createdAt: string
+  updatedAt: string
 }
 
 export interface CreateRecipeItemDto {
@@ -27,4 +28,15 @@ export interface CreateRecipeDto {
   yieldUnit: string
   instructions?: string
   items: CreateRecipeItemDto[]
+}
+
+export interface UpdateRecipeDto {
+  yieldQty?: number
+  yieldUnit?: string
+  instructions?: string
+}
+
+export interface UpdateRecipeItemDto {
+  quantity?: number
+  unit?: string
 }

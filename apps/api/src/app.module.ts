@@ -17,6 +17,7 @@ import { ProductionModule } from './modules/production/production.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { EmailModule } from './modules/email/email.module'
 import { AuditModule } from './modules/audit/audit.module'
+import { RecipesModule } from './modules/recipes/recipes.module'
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { AuditModule } from './modules/audit/audit.module'
     DashboardModule,
     EmailModule,
     AuditModule,
+    RecipesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
