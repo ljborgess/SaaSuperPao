@@ -11,6 +11,11 @@ import type { CreateRecipeDto, UpdateRecipeDto, CreateRecipeItemDto, UpdateRecip
 export class RecipesController {
   constructor(private readonly recipesService: RecipesService) {}
 
+  @Get('product-ids')
+  findProductIds() {
+    return this.recipesService.findProductIdsWithRecipe()
+  }
+
   @Get('by-product/:productId')
   findByProduct(@Param('productId') productId: string) {
     return this.recipesService.findByProduct(productId)

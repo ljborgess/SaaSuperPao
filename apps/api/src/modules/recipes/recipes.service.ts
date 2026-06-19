@@ -13,6 +13,11 @@ export class RecipesService {
     @InjectRepository(Ingredient) private readonly ingredientRepo: EntityRepository<Ingredient>,
   ) {}
 
+  async findProductIdsWithRecipe(): Promise<string[]> {
+    const recipes = await this.recipeRepo.findAll({ fields: ['product'] as any })
+    return recipes.map((r: any) => (typeof r.product === 'object' ? r.product.id : r.product) as string)
+  }
+
   async findByProduct(productId: string): Promise<Recipe | null> {
     const product = await this.productRepo.findOne(productId)
     if (!product) throw new NotFoundException('Produto não encontrado.')

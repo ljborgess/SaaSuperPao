@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { PageHeader } from '@/components/layout/page-header'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Package, ChefHat, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Package, ChefHat, ChevronDown, ChevronUp, X, Cake, Coffee, Sandwich, Cookie, Wheat, Apple, ShoppingBag, Tag, AlertTriangle, Lock } from 'lucide-react'
 import { formatCurrency } from '@superpao/shared-utils'
 import type { ProductDto, ProductUnit, CategoryDto, PaginatedResponse } from '@superpao/shared-types'
 import type { RecipeDto, CreateRecipeDto, CreateRecipeItemDto } from '@superpao/shared-types'
@@ -16,7 +16,6 @@ import { Badge } from '@/components/ui/badge'
 import { SearchInput } from '@/components/ui/search-input'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
-import { Pagination } from '@/components/ui/pagination'
 import { cn } from '@/lib/utils'
 
 type FormState = { name: string; code: string; categoryId: string; unit: ProductUnit; costPrice: string; salePrice: string; minStock: string }
@@ -51,6 +50,7 @@ function RecipePanel({ product }: { product: ProductDto }) {
     mutationFn: (dto: CreateRecipeDto) => api.post('/api/recipes', dto),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['recipe', product.id] })
+      qc.invalidateQueries({ queryKey: ['recipes-product-ids'] })
       toast.success('Receita criada.')
       setCreateForm(null)
     },
@@ -71,6 +71,7 @@ function RecipePanel({ product }: { product: ProductDto }) {
     mutationFn: (id: string) => api.delete(`/api/recipes/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['recipe', product.id] })
+      qc.invalidateQueries({ queryKey: ['recipes-product-ids'] })
       toast.success('Receita removida.')
     },
     onError: () => toast.error('Erro ao remover receita.'),
@@ -102,7 +103,7 @@ function RecipePanel({ product }: { product: ProductDto }) {
     mutationFn: ({ costPrice }: { costPrice: number }) =>
       api.patch(`/api/products/${product.id}`, { costPrice }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['products'] })
+      qc.invalidateQueries({ queryKey: ['products-all'] })
       toast.success('Preço de custo atualizado a partir da receita.')
     },
     onError: () => toast.error('Erro ao atualizar preço de custo.'),
@@ -361,18 +362,200 @@ function RecipePanel({ product }: { product: ProductDto }) {
   )
 }
 
+type CategoryGroup = {
+  id: string | null
+  name: string
+  products: ProductDto[]
+}
+
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  bolo: Cake,
+  bolos: Cake,
+  brioche: Wheat,
+  brioches: Wheat,
+  pão: Wheat,
+  paes: Wheat,
+  pães: Wheat,
+  bebida: Coffee,
+  bebidas: Coffee,
+  salgado: Sandwich,
+  salgados: Sandwich,
+  biscoito: Cookie,
+  biscoitos: Cookie,
+  cookie: Cookie,
+  cookies: Cookie,
+  fruta: Apple,
+  frutas: Apple,
+  especial: ShoppingBag,
+  especiais: ShoppingBag,
+}
+
+function getCategoryIcon(name: string): React.ElementType {
+  const key = name.toLowerCase().trim()
+  for (const [k, Icon] of Object.entries(CATEGORY_ICONS)) {
+    if (key.includes(k)) return Icon
+  }
+  return Tag
+}
+
+
+function CategorySection({
+  group,
+  recipesSet,
+  expandedRecipe,
+  onToggleRecipe,
+  onEdit,
+  onDelete,
+}: {
+  group: CategoryGroup
+  recipesSet: Set<string>
+  expandedRecipe: string | null
+  onToggleRecipe: (id: string) => void
+  onEdit: (p: ProductDto) => void
+  onDelete: (id: string) => void
+}) {
+  const [collapsed, setCollapsed] = useState(false)
+  const Icon = getCategoryIcon(group.name)
+  const missingRecipes = group.products.filter(p => !recipesSet.has(p.id)).length
+
+  return (
+    <div className="flex flex-col rounded-xl border border-surface-200 overflow-hidden shadow-sm">
+      <button
+        className="flex items-center gap-3 px-5 py-4 bg-surface-50 border-b border-surface-200 hover:bg-surface-100/60 transition-colors text-left w-full"
+        onClick={() => setCollapsed(c => !c)}
+      >
+        <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-100 text-brand-500 shrink-0">
+          <Icon size={16} />
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-brand-900 leading-tight truncate">{group.name}</p>
+          <p className="text-xs text-brand-400 font-normal mt-0.5">
+            {group.products.length} produto{group.products.length !== 1 ? 's' : ''}
+            {missingRecipes > 0 && (
+              <span className="ml-2 inline-flex items-center gap-1 text-amber-500">
+                <AlertTriangle size={10} />
+                {missingRecipes} sem receita
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="text-brand-400 shrink-0">
+          {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+        </div>
+      </button>
+
+      {!collapsed && (
+        <div className="overflow-x-auto bg-white">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-surface-100 bg-surface-50/60">
+                <th className="table-head text-xs">Código</th>
+                <th className="table-head text-xs">Nome</th>
+                <th className="table-head text-xs text-right">Custo</th>
+                <th className="table-head text-xs text-right">Venda</th>
+                <th className="table-head text-xs text-right">Estoque</th>
+                <th className="table-head text-xs text-center">Status</th>
+                <th className="w-24" />
+              </tr>
+            </thead>
+            <tbody>
+              {group.products.map((p, i) => {
+                const hasRecipe = recipesSet.has(p.id)
+                return (
+                  <React.Fragment key={p.id}>
+                    <tr
+                      className={cn(
+                        'hover:bg-surface-50/80 transition-colors group',
+                        (expandedRecipe !== p.id && i < group.products.length - 1) && 'border-b border-surface-100',
+                      )}
+                    >
+                      <td className="table-cell text-xs text-brand-400 font-mono">{p.code}</td>
+                      <td className="table-cell">
+                        <span className="font-semibold">{p.name}</span>
+                      </td>
+                      <td className="table-cell text-right text-brand-500 text-xs">{formatCurrency(p.costPrice)}</td>
+                      <td className="table-cell text-right font-semibold">{formatCurrency(p.salePrice)}</td>
+                      <td className="table-cell text-right">
+                        <span className={cn('font-semibold', p.currentStock <= p.minStock ? 'text-red-500' : 'text-brand-800')}>
+                          {p.currentStock}
+                        </span>
+                        <span className="text-xs text-brand-400 ml-1">{p.unit}</span>
+                      </td>
+                      <td className="table-cell text-center">
+                        <Badge variant={p.status === 'ACTIVE' ? 'success' : 'neutral'}>
+                          {p.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </td>
+                      <td className="table-cell">
+                        <div className="flex items-center gap-0.5 justify-end">
+                          <Button
+                            variant="icon"
+                            size="icon"
+                            onClick={() => onToggleRecipe(p.id)}
+                            aria-label="Receita"
+                            title={!hasRecipe ? 'Receita pendente — clique para cadastrar' : 'Receita'}
+                            className={cn(
+                              'opacity-0 group-hover:opacity-100 transition-opacity',
+                              expandedRecipe === p.id && 'text-brand-600 bg-brand-50 !opacity-100',
+                              !hasRecipe && 'text-amber-500 !opacity-100',
+                            )}
+                          >
+                            {expandedRecipe === p.id ? <ChevronUp size={14} /> : <ChefHat size={14} />}
+                          </Button>
+                          <Button
+                            variant="icon"
+                            size="icon"
+                            onClick={() => hasRecipe && onEdit(p)}
+                            aria-label={hasRecipe ? 'Editar' : 'Cadastre a receita primeiro'}
+                            title={hasRecipe ? undefined : 'Cadastre a receita primeiro'}
+                            className={cn(!hasRecipe && 'opacity-30 cursor-not-allowed')}
+                          >
+                            {hasRecipe ? <Pencil size={14} /> : <Lock size={14} />}
+                          </Button>
+                          <Button
+                            variant="icon"
+                            size="icon"
+                            onClick={() => hasRecipe && onDelete(p.id)}
+                            aria-label={hasRecipe ? 'Excluir' : 'Cadastre a receita primeiro'}
+                            title={hasRecipe ? undefined : 'Cadastre a receita primeiro'}
+                            className={cn(
+                              hasRecipe ? 'hover:text-red-500 hover:bg-red-50' : 'opacity-30 cursor-not-allowed',
+                            )}
+                          >
+                            {hasRecipe ? <Trash2 size={14} /> : <Lock size={14} />}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedRecipe === p.id && (
+                      <tr className="border-b border-surface-100">
+                        <td colSpan={7} className="p-0">
+                          <RecipePanel product={p} />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProdutosPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<ProductDto | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY)
   const [expandedRecipe, setExpandedRecipe] = useState<string | null>(null)
 
   const { data, isLoading } = useQuery<PaginatedResponse<ProductDto>>({
-    queryKey: ['products', page, search],
-    queryFn: () => api.get('/api/products', { params: { page, limit: 20, search } }).then((r) => r.data),
+    queryKey: ['products-all', search],
+    queryFn: () => api.get('/api/products', { params: { page: 1, limit: 500, search } }).then((r) => r.data),
   })
 
   const { data: categories } = useQuery<PaginatedResponse<CategoryDto>>({
@@ -380,15 +563,51 @@ export default function ProdutosPage() {
     queryFn: () => api.get('/api/categories', { params: { page: 1, limit: 100 } }).then((r) => r.data),
   })
 
+  const { data: recipeProductIds } = useQuery<string[]>({
+    queryKey: ['recipes-product-ids'],
+    queryFn: () => api.get('/api/recipes/product-ids').then((r) => r.data),
+  })
+
+  const recipesSet = useMemo(() => new Set<string>(recipeProductIds ?? []), [recipeProductIds])
+
+  const categoryGroups = useMemo<CategoryGroup[]>(() => {
+    const products = data?.data ?? []
+    const map = new Map<string, CategoryGroup>()
+
+    for (const p of products) {
+      const key = p.category?.id ?? '__none__'
+      if (!map.has(key)) {
+        map.set(key, {
+          id: p.category?.id ?? null,
+          name: p.category?.name ?? 'Sem categoria',
+          products: [],
+        })
+      }
+      map.get(key)!.products.push(p)
+    }
+
+    const groups = Array.from(map.values())
+    const none = groups.find(g => g.id === null)
+    const rest = groups.filter(g => g.id !== null).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+    return none ? [...rest, none] : rest
+  }, [data])
+
   const saveMutation = useMutation({
     mutationFn: (payload: object) =>
       editing
         ? api.patch(`/api/products/${editing.id}`, payload)
         : api.post('/api/products', payload),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['products'] })
-      toast.success(editing ? 'Produto atualizado.' : 'Produto criado.')
-      closeForm()
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['products-all'] })
+      if (!editing) {
+        const newId: string = res.data?.id
+        toast.success('Produto criado. Cadastre a receita para liberar o produto.')
+        closeForm()
+        if (newId) setExpandedRecipe(newId)
+      } else {
+        toast.success('Produto atualizado.')
+        closeForm()
+      }
     },
     onError: () => toast.error('Erro ao salvar produto.'),
   })
@@ -396,7 +615,7 @@ export default function ProdutosPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/api/products/${id}`),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['products'] })
+      qc.invalidateQueries({ queryKey: ['products-all'] })
       toast.success('Produto removido.')
     },
     onError: () => toast.error('Erro ao remover produto.'),
@@ -440,6 +659,8 @@ export default function ProdutosPage() {
     setExpandedRecipe(prev => prev === productId ? null : productId)
   }
 
+  const totalProducts = data?.total ?? 0
+
   return (
     <div>
       <PageHeader
@@ -453,208 +674,163 @@ export default function ProdutosPage() {
         }
       />
 
+      {/* Drawer overlay */}
       {showForm && (
-        <Card padding className="mb-6 animate-slide-up">
-          <h3 className="text-sm font-semibold text-brand-900 mb-4">
-            {editing ? 'Editar produto' : 'Novo produto'}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input
-                required
-                placeholder="Nome *"
-                className="input-base sm:col-span-2"
-                value={form.name}
-                onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-              />
-              <input
-                required
-                placeholder="Código *"
-                className="input-base"
-                value={form.code}
-                onChange={(e) => setForm(f => ({ ...f, code: e.target.value }))}
-              />
-              <select
-                className="input-base"
-                value={form.categoryId}
-                onChange={(e) => setForm(f => ({ ...f, categoryId: e.target.value }))}
+        <div className="fixed inset-0 z-50 flex">
+          <div
+            className="flex-1 bg-black/30 backdrop-blur-[1px]"
+            onClick={closeForm}
+          />
+          <div className="w-full max-w-md bg-white shadow-2xl flex flex-col animate-slide-left h-full overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-surface-200">
+              <h3 className="text-base font-semibold text-brand-900">
+                {editing ? 'Editar produto' : 'Novo produto'}
+              </h3>
+              <button
+                onClick={closeForm}
+                className="p-1.5 rounded-lg text-brand-400 hover:text-brand-700 hover:bg-surface-100 transition-colors"
               >
-                <option value="">Sem categoria</option>
-                {categories?.data.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-              <select
-                className="input-base"
-                value={form.unit}
-                onChange={(e) => setForm(f => ({ ...f, unit: e.target.value as ProductUnit }))}
-              >
-                {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-              </select>
-              <input
-                required
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Estoque mínimo"
-                className="input-base"
-                value={form.minStock}
-                onChange={(e) => setForm(f => ({ ...f, minStock: e.target.value }))}
-              />
-              <input
-                required
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Preço de custo *"
-                className="input-base"
-                value={form.costPrice}
-                onChange={(e) => setForm(f => ({ ...f, costPrice: e.target.value }))}
-              />
-              <input
-                required
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="Preço de venda *"
-                className="input-base"
-                value={form.salePrice}
-                onChange={(e) => setForm(f => ({ ...f, salePrice: e.target.value }))}
-              />
+                <X size={16} />
+              </button>
             </div>
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
-              <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
-              </Button>
-            </div>
-          </form>
-        </Card>
+
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col px-6 py-5 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-brand-500 mb-1.5">Nome *</label>
+                <input
+                  required
+                  placeholder="Ex: Pão Francês"
+                  className="input-base w-full"
+                  value={form.name}
+                  onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-brand-500 mb-1.5">Código *</label>
+                  <input
+                    required
+                    placeholder="Ex: PAO-001"
+                    className="input-base w-full"
+                    value={form.code}
+                    onChange={(e) => setForm(f => ({ ...f, code: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-brand-500 mb-1.5">Unidade</label>
+                  <select
+                    className="input-base w-full"
+                    value={form.unit}
+                    onChange={(e) => setForm(f => ({ ...f, unit: e.target.value as ProductUnit }))}
+                  >
+                    {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-brand-500 mb-1.5">Categoria</label>
+                <select
+                  className="input-base w-full"
+                  value={form.categoryId}
+                  onChange={(e) => setForm(f => ({ ...f, categoryId: e.target.value }))}
+                >
+                  <option value="">Sem categoria</option>
+                  {categories?.data.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-brand-500 mb-1.5">Custo *</label>
+                  <input
+                    required
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    className="input-base w-full"
+                    value={form.costPrice}
+                    onChange={(e) => setForm(f => ({ ...f, costPrice: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-brand-500 mb-1.5">Venda *</label>
+                  <input
+                    required
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    className="input-base w-full"
+                    value={form.salePrice}
+                    onChange={(e) => setForm(f => ({ ...f, salePrice: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-brand-500 mb-1.5">Estoque mín.</label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    placeholder="0"
+                    className="input-base w-full"
+                    value={form.minStock}
+                    onChange={(e) => setForm(f => ({ ...f, minStock: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-auto pt-4 flex gap-2 justify-end border-t border-surface-100">
+                <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
+                <Button type="submit" disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? 'Salvando...' : editing ? 'Salvar alterações' : 'Criar produto'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       <Card>
-        <div className="px-6 py-4 border-b border-surface-200">
+        <div className="px-6 py-4 border-b border-surface-200 flex items-center gap-4">
           <SearchInput
             value={search}
-            onChange={(v) => { setSearch(v); setPage(1) }}
+            onChange={setSearch}
             placeholder="Buscar por nome ou código..."
           />
+          {totalProducts > 0 && (
+            <span className="text-xs text-brand-400 shrink-0">
+              {totalProducts} produto{totalProducts !== 1 ? 's' : ''}
+            </span>
+          )}
         </div>
 
         {isLoading ? (
           <LoadingState icon={Package} message="Carregando produtos..." />
-        ) : !data?.data.length ? (
+        ) : categoryGroups.length === 0 ? (
           <EmptyState
             icon={Package}
             title="Nenhum produto encontrado"
             description="Cadastre seu primeiro produto para começar."
           />
         ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-surface-200 bg-surface-50/50">
-                    <th className="table-head">Código</th>
-                    <th className="table-head">Nome</th>
-                    <th className="table-head">Categoria</th>
-                    <th className="table-head text-right">Custo</th>
-                    <th className="table-head text-right">Venda</th>
-                    <th className="table-head text-right">Estoque</th>
-                    <th className="table-head text-center">Status</th>
-                    <th className="table-head w-28" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.data.map((p, i) => (
-                    <>
-                      <tr
-                        key={p.id}
-                        className={cn(
-                          'hover:bg-surface-50/80 transition-colors group',
-                          expandedRecipe !== p.id && i < data.data.length - 1 && 'border-b border-surface-100',
-                        )}
-                      >
-                        <td className="table-cell text-xs text-brand-400 font-mono">{p.code}</td>
-                        <td className="table-cell font-semibold">{p.name}</td>
-                        <td className="table-cell">
-                          {p.category ? (
-                            <Badge variant="neutral">{p.category.name}</Badge>
-                          ) : (
-                            <span className="text-brand-300">—</span>
-                          )}
-                        </td>
-                        <td className="table-cell text-right text-brand-500 text-xs">
-                          {formatCurrency(p.costPrice)}
-                        </td>
-                        <td className="table-cell text-right font-semibold">
-                          {formatCurrency(p.salePrice)}
-                        </td>
-                        <td className="table-cell text-right">
-                          <span
-                            className={cn(
-                              'font-semibold',
-                              p.currentStock <= p.minStock ? 'text-red-500' : 'text-brand-800',
-                            )}
-                          >
-                            {p.currentStock}
-                          </span>
-                          <span className="text-xs text-brand-400 ml-1">{p.unit}</span>
-                        </td>
-                        <td className="table-cell text-center">
-                          <Badge variant={p.status === 'ACTIVE' ? 'success' : 'neutral'}>
-                            {p.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-                          </Badge>
-                        </td>
-                        <td className="table-cell">
-                          <div className="flex items-center gap-0.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="icon"
-                              size="icon"
-                              onClick={() => toggleRecipe(p.id)}
-                              aria-label="Receita"
-                              className={cn(expandedRecipe === p.id && 'text-brand-600 bg-brand-50')}
-                            >
-                              {expandedRecipe === p.id ? <ChevronUp size={14} /> : <ChefHat size={14} />}
-                            </Button>
-                            <Button variant="icon" size="icon" onClick={() => openForm(p)} aria-label="Editar">
-                              <Pencil size={14} />
-                            </Button>
-                            <Button
-                              variant="icon"
-                              size="icon"
-                              onClick={() => deleteMutation.mutate(p.id)}
-                              className="hover:text-red-500 hover:bg-red-50"
-                              aria-label="Excluir"
-                            >
-                              <Trash2 size={14} />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                      {expandedRecipe === p.id && (
-                        <tr key={`recipe-${p.id}`} className={cn(i < data.data.length - 1 && 'border-b border-surface-100')}>
-                          <td colSpan={8} className="p-0">
-                            <RecipePanel product={p} />
-                          </td>
-                        </tr>
-                      )}
-                    </>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {data.totalPages > 1 && (
-              <Pagination
-                page={page}
-                totalPages={data.totalPages}
-                total={data.total}
-                label={`produto${data.total !== 1 ? 's' : ''}`}
-                onPageChange={setPage}
+          <div className="p-5 grid grid-cols-1 xl:grid-cols-2 gap-5">
+            {categoryGroups.map((group) => (
+              <CategorySection
+                key={group.id ?? '__none__'}
+                group={group}
+                recipesSet={recipesSet}
+                expandedRecipe={expandedRecipe}
+                onToggleRecipe={toggleRecipe}
+                onEdit={openForm}
+                onDelete={(id) => deleteMutation.mutate(id)}
               />
-            )}
-          </>
+            ))}
+          </div>
         )}
       </Card>
     </div>

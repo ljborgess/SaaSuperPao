@@ -107,7 +107,7 @@ export default function DashboardPage() {
       value: loadingStats ? null : totalLowStock,
       sub: `${stats?.lowStockIngredients ?? 0} ing. · ${stats?.lowStockProducts ?? 0} prod.`,
       icon: AlertTriangle,
-      href: '/estoque',
+      href: '#estoque-critico',
       leftBorder: totalLowStock > 0 ? 'border-l-red-400' : 'border-l-emerald-400',
       iconColor: totalLowStock > 0 ? 'text-red-500' : 'text-emerald-500',
       iconBg: totalLowStock > 0 ? 'bg-red-50' : 'bg-emerald-50',
@@ -343,7 +343,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Alertas de estoque baixo */}
-      <Card>
+      <Card id="estoque-critico">
         <CardHeader>
           <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', totalLowStock > 0 ? 'bg-red-50' : 'bg-emerald-50')}>
             <AlertTriangle size={15} className={totalLowStock > 0 ? 'text-red-500' : 'text-emerald-500'} />

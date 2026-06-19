@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { Bell, AlertTriangle, CheckCircle, Package, ShoppingCart, X } from 'lucide-react'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -32,9 +33,42 @@ function notificationIcon(type: NotificationType) {
   }
 }
 
-function NotificationItem({ n }: { n: NotificationDto }) {
+function notificationHref(type: NotificationType): string {
+  switch (type) {
+    case 'LOW_STOCK_INGREDIENT':
+    case 'LOW_STOCK_PRODUCT':
+      return '/dashboard#estoque-critico'
+    case 'PURCHASE_RECEIVED':
+      return '/compras'
+    case 'PRODUCTION_COMPLETED':
+      return '/producao'
+    default:
+      return '/dashboard'
+  }
+}
+
+function NotificationItem({ n, onClose }: { n: NotificationDto; onClose: () => void }) {
+  const router = useRouter()
+
+  function handleClick() {
+    const href = notificationHref(n.type)
+    onClose()
+    if (href.includes('#')) {
+      const [path, hash] = href.split('#')
+      router.push(path)
+      setTimeout(() => {
+        document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 120)
+    } else {
+      router.push(href)
+    }
+  }
+
   return (
-    <div className="flex gap-2.5 px-4 py-3 hover:bg-surface-50 transition-colors">
+    <button
+      onClick={handleClick}
+      className="w-full text-left flex gap-2.5 px-4 py-3 hover:bg-surface-50 transition-colors"
+    >
       {notificationIcon(n.type)}
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-brand-800 leading-tight">{n.title}</p>
@@ -43,7 +77,7 @@ function NotificationItem({ n }: { n: NotificationDto }) {
       <span className="text-[10px] text-brand-300 shrink-0 mt-0.5 whitespace-nowrap">
         {formatRelativeTime(n.occurredAt)}
       </span>
-    </div>
+    </button>
   )
 }
 
@@ -142,7 +176,7 @@ export function NotificationDropdown() {
                 </p>
               </div>
             ) : (
-              items.map((n) => <NotificationItem key={n.id} n={n} />)
+              items.map((n) => <NotificationItem key={n.id} n={n} onClose={() => setOpen(false)} />)
             )}
           </div>
 
