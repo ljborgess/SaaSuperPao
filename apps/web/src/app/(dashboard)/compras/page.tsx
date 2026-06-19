@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { PageHeader } from '@/components/layout/page-header'
-import { ShoppingCart, Plus, Trash2, X, CheckCircle2 } from 'lucide-react'
+import { ShoppingCart, Plus, Trash2, X, CheckCircle2, Pencil } from 'lucide-react'
+import { toast } from 'sonner'
 import { formatCurrency } from '@superpao/shared-utils'
 import type { PurchaseDto, SupplierDto, IngredientDto, PaginatedResponse } from '@superpao/shared-types'
 import { Button } from '@/components/ui/button'
@@ -30,6 +31,7 @@ export default function ComprasPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [showForm, setShowForm] = useState(false)
+  const [editingPurchase, setEditingPurchase] = useState<PurchaseDto | null>(null)
   const [supplierId, setSupplierId] = useState('')
   const [purchaseDate, setPurchaseDate] = useState('')
   const [invoiceNumber, setInvoiceNumber] = useState('')
@@ -54,27 +56,43 @@ export default function ComprasPage() {
   })
 
   const saveMutation = useMutation({
-    mutationFn: (payload: object) => api.post('/api/purchases', payload),
+    mutationFn: (payload: object) =>
+      editingPurchase
+        ? api.patch(`/api/purchases/${editingPurchase.id}`, payload)
+        : api.post('/api/purchases', payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['purchases'] })
+      toast.success(editingPurchase ? 'Compra atualizada.' : 'Compra registrada.')
       closeForm()
     },
-    onError: () => alert('Erro ao registrar compra.'),
+    onError: () => toast.error('Erro ao salvar compra.'),
   })
 
   const receiveMutation = useMutation({
     mutationFn: (id: string) => api.patch(`/api/purchases/${id}/receive`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['purchases'] }),
-    onError: () => alert('Erro ao receber compra.'),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['purchases'] })
+      toast.success('Compra recebida. Estoque atualizado.')
+    },
+    onError: () => toast.error('Erro ao receber compra.'),
   })
 
   function closeForm() {
     setShowForm(false)
+    setEditingPurchase(null)
     setSupplierId('')
     setPurchaseDate('')
     setInvoiceNumber('')
     setNotes('')
     setItems([{ ...EMPTY_ITEM }])
+  }
+
+  function openEdit(p: PurchaseDto) {
+    setEditingPurchase(p)
+    setPurchaseDate(p.purchaseDate ? p.purchaseDate.slice(0, 10) : '')
+    setInvoiceNumber(p.invoiceNumber ?? '')
+    setNotes(p.notes ?? '')
+    setShowForm(true)
   }
 
   function updateItem(index: number, field: keyof ItemLine, value: string) {
@@ -91,20 +109,27 @@ export default function ComprasPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const payload = {
-      supplierId,
-      purchaseDate: purchaseDate || undefined,
-      invoiceNumber: invoiceNumber || undefined,
-      notes: notes || undefined,
-      items: items
-        .filter(it => it.ingredientId && it.quantity && it.unitPrice)
-        .map(it => ({
-          ingredientId: it.ingredientId,
-          quantity: parseFloat(it.quantity),
-          unitPrice: parseFloat(it.unitPrice),
-        })),
+    if (editingPurchase) {
+      saveMutation.mutate({
+        purchaseDate: purchaseDate || undefined,
+        invoiceNumber: invoiceNumber || undefined,
+        notes: notes || undefined,
+      })
+    } else {
+      saveMutation.mutate({
+        supplierId,
+        purchaseDate: purchaseDate || undefined,
+        invoiceNumber: invoiceNumber || undefined,
+        notes: notes || undefined,
+        items: items
+          .filter(it => it.ingredientId && it.quantity && it.unitPrice)
+          .map(it => ({
+            ingredientId: it.ingredientId,
+            quantity: parseFloat(it.quantity),
+            unitPrice: parseFloat(it.unitPrice),
+          })),
+      })
     }
-    saveMutation.mutate(payload)
   }
 
   const itemsTotal = items.reduce((sum, it) => {
@@ -129,24 +154,28 @@ export default function ComprasPage() {
       {showForm && (
         <Card padding className="mb-6 animate-slide-up">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-brand-900">Nova compra</h3>
+            <h3 className="text-sm font-semibold text-brand-900">
+              {editingPurchase ? 'Editar compra' : 'Nova compra'}
+            </h3>
             <Button type="button" variant="icon" size="icon" onClick={closeForm} aria-label="Fechar">
               <X size={16} />
             </Button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <select
-                required
-                className="input-base"
-                value={supplierId}
-                onChange={(e) => setSupplierId(e.target.value)}
-              >
-                <option value="">Fornecedor *</option>
-                {suppliers?.data.map((s) => (
-                  <option key={s.id} value={s.id}>{s.razaoSocial}</option>
-                ))}
-              </select>
+              {!editingPurchase && (
+                <select
+                  required
+                  className="input-base"
+                  value={supplierId}
+                  onChange={(e) => setSupplierId(e.target.value)}
+                >
+                  <option value="">Fornecedor *</option>
+                  {suppliers?.data.map((s) => (
+                    <option key={s.id} value={s.id}>{s.razaoSocial}</option>
+                  ))}
+                </select>
+              )}
               <input
                 type="date"
                 className="input-base"
@@ -167,7 +196,7 @@ export default function ComprasPage() {
               />
             </div>
 
-            <div className="border border-surface-200 rounded-xl overflow-hidden">
+            {!editingPurchase && <div className="border border-surface-200 rounded-xl overflow-hidden">
               <div className="bg-surface-50 px-4 py-2 border-b border-surface-200 flex items-center justify-between">
                 <span className="text-xs font-semibold text-brand-600">Itens da compra</span>
                 <Button type="button" variant="ghost" onClick={addItem}>
@@ -230,12 +259,12 @@ export default function ComprasPage() {
                   <span className="text-sm font-bold text-brand-900">{formatCurrency(itemsTotal)}</span>
                 </div>
               )}
-            </div>
+            </div>}
 
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
               <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Salvando...' : 'Registrar compra'}
+                {saveMutation.isPending ? 'Salvando...' : editingPurchase ? 'Salvar' : 'Registrar compra'}
               </Button>
             </div>
           </form>
@@ -270,7 +299,7 @@ export default function ComprasPage() {
                     <th className="table-head">Data</th>
                     <th className="table-head text-right">Total</th>
                     <th className="table-head text-center">Status</th>
-                    <th className="table-head" />
+                    <th className="table-head w-28" />
                   </tr>
                 </thead>
                 <tbody>
@@ -280,7 +309,7 @@ export default function ComprasPage() {
                       <tr
                         key={p.id}
                         className={cn(
-                          'hover:bg-surface-50/80 transition-colors',
+                          'hover:bg-surface-50/80 transition-colors group',
                           i < data.data.length - 1 && 'border-b border-surface-100',
                         )}
                       >
@@ -299,18 +328,31 @@ export default function ComprasPage() {
                         <td className="table-cell text-center">
                           <Badge variant={style.variant}>{style.label}</Badge>
                         </td>
-                        <td className="table-cell text-center">
-                          {p.status === 'PENDING' && (
-                            <Button
-                              variant="ghost"
-                              onClick={() => receiveMutation.mutate(p.id)}
-                              disabled={receiveMutation.isPending}
-                              className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 text-xs"
-                            >
-                              <CheckCircle2 size={14} />
-                              Receber
-                            </Button>
-                          )}
+                        <td className="table-cell">
+                          <div className="flex items-center justify-end gap-1">
+                            {p.status === 'PENDING' && (
+                              <>
+                                <Button
+                                  variant="icon"
+                                  size="icon"
+                                  onClick={() => openEdit(p)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                  aria-label="Editar"
+                                >
+                                  <Pencil size={14} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => receiveMutation.mutate(p.id)}
+                                  disabled={receiveMutation.isPending}
+                                  className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 text-xs"
+                                >
+                                  <CheckCircle2 size={14} />
+                                  Receber
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     )

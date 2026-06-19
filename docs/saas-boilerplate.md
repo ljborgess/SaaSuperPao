@@ -1374,5 +1374,18 @@ Use este checklist ao iniciar um novo SaaS com esta stack.
 
 ---
 
+Stack completa com versões fixas e justificativa de cada escolha
+Monorepo — estrutura de pastas, turbo.json, scripts raiz, regras de dependência entre pacotes
+Backend — main.ts obrigatório, padrão de módulo, controller/service/DTO
+Frontend — App Router, middleware com bug do startsWith('/') já corrigido, lib/api.ts, lib/auth.ts
+Autenticação — fluxo completo (login → refresh → logout → forgot/reset), JWT payload mínimo, segredos sem fallback
+Segurança — checklist de 20+ itens (helmet, throttle, brute force, hidden fields, sessionStorage, USER node, etc.)
+Banco — padrão de entidade, migrations, seed, hidden: true vs ClassSerializerInterceptor
+Docker — Dockerfiles multi-stage, compose com healthcheck, credenciais via env
+Env vars — .env.example completo, regra NEXT_PUBLIC_* só no frontend, GROQ em apps/api/.env
+Audit logging — entidade + serviço + o que auditar no mínimo
+Landing page — estrutura de seções, AnimateOnScroll, animação float
+Checklist final — ~35 itens para copiar em qualquer projeto novo
+
 *Documento gerado a partir do projeto SuperPão — junho de 2026.*
 *Atualizar este documento sempre que uma decisão arquitetural relevante for tomada.*

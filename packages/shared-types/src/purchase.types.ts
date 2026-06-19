@@ -33,3 +33,9 @@ export interface CreatePurchaseDto {
   notes?: string
   items: CreatePurchaseItemDto[]
 }
+
+export interface UpdatePurchaseDto {
+  purchaseDate?: string
+  invoiceNumber?: string
+  notes?: string
+}

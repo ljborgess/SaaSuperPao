@@ -12,6 +12,11 @@ export enum ProductionStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum ProductionMode {
+  AUTOMATIC = 'AUTOMATIC',
+  MANUAL = 'MANUAL',
+}
+
 @Entity({ tableName: 'production_orders' })
 export class ProductionOrder {
   @PrimaryKey({ type: 'uuid' })
@@ -37,6 +42,9 @@ export class ProductionOrder {
 
   @Enum(() => ProductionStatus)
   status: ProductionStatus = ProductionStatus.PENDING
+
+  @Enum(() => ProductionMode)
+  mode: ProductionMode = ProductionMode.AUTOMATIC
 
   @Property({ nullable: true, type: 'text' })
   notes?: string
