@@ -17,6 +17,8 @@ import type {
   LowStockItem,
   TopProducedProduct,
   DashboardActivity,
+  NotificationsDto,
+  NotificationDto,
 } from '@superpao/shared-types'
 
 @Injectable()
@@ -149,6 +151,80 @@ export class DashboardService {
     ]
 
     return items.sort((a, b) => a.currentStock / a.minStock - b.currentStock / b.minStock)
+  }
+
+  async getNotifications(): Promise<NotificationsDto> {
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+    const [allIngredients, allProducts, recentPurchases, recentProduction] = await Promise.all([
+      this.ingredientRepo.find({ active: true, minStock: { $gt: 0 } }, { orderBy: { name: 'ASC' } }),
+      this.productRepo.find({ status: ProductStatus.ACTIVE, minStock: { $gt: 0 } }, { orderBy: { name: 'ASC' } }),
+      this.purchaseRepo.find(
+        { status: PurchaseStatus.RECEIVED, purchaseDate: { $gte: since } },
+        { populate: ['supplier'], orderBy: { purchaseDate: 'DESC' }, limit: 10 },
+      ),
+      this.productionRepo.find(
+        { status: ProductionStatus.COMPLETED, completedAt: { $gte: since } },
+        { populate: ['product'], orderBy: { completedAt: 'DESC' }, limit: 10 },
+      ),
+    ])
+
+    const alerts: NotificationDto[] = []
+
+    for (const i of allIngredients) {
+      if (Number(i.currentStock) <= Number(i.minStock)) {
+        const ratio = Number(i.minStock) > 0 ? Number(i.currentStock) / Number(i.minStock) : 0
+        alerts.push({
+          id: `low-ing-${i.id}`,
+          type: 'LOW_STOCK_INGREDIENT',
+          severity: ratio === 0 ? 'alert' : 'alert',
+          title: `Estoque baixo: ${i.name}`,
+          description: `${Number(i.currentStock)} ${i.unit} restante${Number(i.currentStock) !== 1 ? 's' : ''} (mínimo: ${Number(i.minStock)} ${i.unit})`,
+          occurredAt: new Date().toISOString(),
+        })
+      }
+    }
+
+    for (const p of allProducts) {
+      if (Number(p.currentStock) <= Number(p.minStock)) {
+        alerts.push({
+          id: `low-prod-${p.id}`,
+          type: 'LOW_STOCK_PRODUCT',
+          severity: 'alert',
+          title: `Estoque baixo: ${p.name}`,
+          description: `${Number(p.currentStock)} ${p.unit} restante${Number(p.currentStock) !== 1 ? 's' : ''} (mínimo: ${Number(p.minStock)} ${p.unit})`,
+          occurredAt: new Date().toISOString(),
+        })
+      }
+    }
+
+    const activity: NotificationDto[] = []
+
+    for (const purchase of recentPurchases) {
+      activity.push({
+        id: `purchase-${purchase.id}`,
+        type: 'PURCHASE_RECEIVED',
+        severity: 'info',
+        title: `Compra recebida`,
+        description: `${purchase.supplier.razaoSocial} — R$ ${Number(purchase.totalValue).toFixed(2)}`,
+        occurredAt: purchase.purchaseDate.toISOString(),
+      })
+    }
+
+    for (const order of recentProduction) {
+      activity.push({
+        id: `production-${order.id}`,
+        type: 'PRODUCTION_COMPLETED',
+        severity: 'info',
+        title: `Produção concluída`,
+        description: `${order.product.name} — ${Number(order.quantity)} un.`,
+        occurredAt: order.completedAt ? order.completedAt.toISOString() : new Date().toISOString(),
+      })
+    }
+
+    activity.sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+
+    return { alerts, activity, totalUnread: alerts.length + activity.length }
   }
 
   async getActivity(): Promise<DashboardActivity> {

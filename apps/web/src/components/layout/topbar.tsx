@@ -1,9 +1,10 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Bell, CalendarDays } from 'lucide-react'
+import { CalendarDays } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getStoredUser } from '@/lib/auth'
+import { NotificationDropdown } from './notification-dropdown'
 
 const ROUTE_LABELS: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -56,13 +57,7 @@ export function Topbar() {
           <span className="capitalize">{date}</span>
         </div>
 
-        <button
-          className="relative p-2 rounded-xl text-brand-400 hover:bg-surface-100 hover:text-brand-600 transition-colors"
-          aria-label="Notificações"
-        >
-          <Bell size={18} strokeWidth={1.75} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-500 rounded-full ring-2 ring-white" />
-        </button>
+        <NotificationDropdown />
 
         {user && (
           <div className="flex items-center gap-2.5 pl-4 border-l border-surface-200">

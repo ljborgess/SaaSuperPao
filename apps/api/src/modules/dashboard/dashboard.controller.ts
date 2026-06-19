@@ -9,20 +9,27 @@ import { DashboardService } from './dashboard.service'
 @ApiTags('Dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly service: DashboardService) {}
 
   @Get('stats')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   getStats() { return this.service.getStats() }
 
   @Get('top-products')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   getTopProducts() { return this.service.getTopProducts() }
 
   @Get('low-stock')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   getLowStock() { return this.service.getLowStock() }
 
   @Get('activity')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   getActivity() { return this.service.getActivity() }
+
+  @Get('notifications')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
+  getNotifications() { return this.service.getNotifications() }
 }
