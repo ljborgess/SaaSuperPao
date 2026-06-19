@@ -11,12 +11,14 @@ import {
   ShoppingCart,
   Factory,
   TrendingUp,
+  TrendingDown,
   CheckCircle2,
   Clock,
   Loader2,
   Users,
   ChevronRight,
   Truck,
+  Minus,
 } from 'lucide-react'
 import { getStoredUser } from '@/lib/auth'
 import type {
@@ -24,6 +26,7 @@ import type {
   LowStockItem,
   TopProducedProduct,
   DashboardActivity,
+  DashboardTrends,
 } from '@superpao/shared-types'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -39,11 +42,8 @@ function getGreeting() {
 
 function statusLabel(s: string) {
   const map: Record<string, string> = {
-    PENDING: 'Pendente',
-    RECEIVED: 'Recebida',
-    CANCELLED: 'Cancelada',
-    IN_PROGRESS: 'Em andamento',
-    COMPLETED: 'Concluída',
+    PENDING: 'Pendente', RECEIVED: 'Recebida', CANCELLED: 'Cancelada',
+    IN_PROGRESS: 'Em andamento', COMPLETED: 'Concluída',
   }
   return map[s] ?? s
 }
@@ -60,6 +60,123 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 }
 
+/* ── Purchase bar chart ──────────────────────────────────────────────────── */
+function PurchaseChart({ data }: { data: DashboardTrends['monthlyPurchases'] }) {
+  const max = Math.max(...data.map((d) => d.value), 1)
+
+  return (
+    <div className="px-5 pb-5">
+      <div className="flex items-end gap-2 h-36">
+        {data.map((d, i) => {
+          const pct = (d.value / max) * 100
+          const isCurrent = i === data.length - 1
+          return (
+            <div key={`${d.month}-${d.year}`} className="flex-1 flex flex-col items-center gap-1.5 group relative">
+              {/* Tooltip */}
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-brand-900 text-white text-[10px] font-semibold px-2 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg">
+                {formatCurrency(d.value)}
+                <br />
+                <span className="text-brand-400 font-normal">{d.count} pedido{d.count !== 1 ? 's' : ''}</span>
+              </div>
+
+              {/* Bar */}
+              <div className="w-full flex-1 flex items-end">
+                <div
+                  className={cn(
+                    'w-full rounded-t-lg transition-all duration-500 cursor-pointer',
+                    isCurrent
+                      ? 'bg-gradient-to-t from-brand-600 to-brand-400 shadow-sm'
+                      : 'bg-gradient-to-t from-surface-300 to-surface-200 group-hover:from-brand-200 group-hover:to-brand-100',
+                  )}
+                  style={{ height: `${Math.max(pct, 3)}%` }}
+                />
+              </div>
+
+              <span className={cn('text-[10px] font-semibold', isCurrent ? 'text-brand-600' : 'text-brand-300')}>
+                {d.month}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="h-px bg-surface-200 -mt-px mb-3" />
+
+      <div className="flex items-center justify-between text-xs text-brand-400">
+        <span>Últimos 6 meses</span>
+        <span className="font-semibold text-brand-700">
+          Total: {formatCurrency(data.reduce((s, d) => s + d.value, 0))}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/* ── Growth card ─────────────────────────────────────────────────────────── */
+function GrowthCard({
+  icon: Icon,
+  label,
+  stat,
+  href,
+}: {
+  icon: React.ElementType
+  label: string
+  stat: DashboardTrends['clientsGrowth'] | null
+  href: string
+}) {
+  const pct = stat?.growthPct ?? 0
+  const isUp = pct > 0
+  const isFlat = pct === 0
+  const TrendIcon = isFlat ? Minus : isUp ? TrendingUp : TrendingDown
+  const trendColor = isFlat ? 'text-brand-400' : isUp ? 'text-emerald-600' : 'text-red-500'
+  const trendBg = isFlat ? 'bg-brand-50' : isUp ? 'bg-emerald-50' : 'bg-red-50'
+
+  return (
+    <Link
+      href={href}
+      className="group bg-white rounded-2xl border border-surface-200 p-5 shadow-card hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col gap-3"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center">
+            <Icon size={16} className="text-brand-500" />
+          </div>
+          <span className="text-xs font-semibold text-brand-500 uppercase tracking-wide">{label}</span>
+        </div>
+        <ChevronRight size={14} className="text-brand-200 group-hover:text-brand-400 transition-colors" />
+      </div>
+
+      {stat ? (
+        <>
+          <div className="flex items-end justify-between">
+            <p className="text-3xl font-bold text-brand-900 font-display leading-none">{stat.total}</p>
+            <div className={cn('flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold', trendBg, trendColor)}>
+              <TrendIcon size={12} />
+              {isFlat ? 'Estável' : `${Math.abs(pct)}%`}
+            </div>
+          </div>
+
+          <div className="space-y-1.5 pt-2 border-t border-surface-100">
+            <div className="flex justify-between text-xs">
+              <span className="text-brand-400">Novos este mês</span>
+              <span className="font-semibold text-brand-700">{stat.newThisMonth}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-brand-400">Mês anterior</span>
+              <span className="font-semibold text-brand-500">{stat.newLastMonth}</span>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="h-20 flex items-center justify-center">
+          <Loader2 size={18} className="text-brand-200 animate-spin" />
+        </div>
+      )}
+    </Link>
+  )
+}
+
+/* ── Page ────────────────────────────────────────────────────────────────── */
 export default function DashboardPage() {
   const [user, setUser] = useState<ReturnType<typeof getStoredUser>>(null)
   useEffect(() => { setUser(getStoredUser()) }, [])
@@ -88,6 +205,12 @@ export default function DashboardPage() {
     refetchInterval: 30_000,
   })
 
+  const { data: trends } = useQuery<DashboardTrends>({
+    queryKey: ['dashboard-trends'],
+    queryFn: () => api.get('/api/dashboard/trends').then((r) => r.data),
+    refetchInterval: 120_000,
+  })
+
   const totalLowStock = (stats?.lowStockIngredients ?? 0) + (stats?.lowStockProducts ?? 0)
 
   const kpiCards = [
@@ -98,9 +221,7 @@ export default function DashboardPage() {
       icon: Package,
       href: '/produtos',
       leftBorder: 'border-l-brand-400',
-      iconColor: 'text-brand-600',
-      iconBg: 'bg-brand-100',
-      valueColor: 'text-brand-900',
+      iconColor: 'text-brand-600', iconBg: 'bg-brand-100', valueColor: 'text-brand-900',
     },
     {
       label: 'Alertas de estoque',
@@ -120,9 +241,7 @@ export default function DashboardPage() {
       icon: ShoppingCart,
       href: '/compras',
       leftBorder: 'border-l-emerald-400',
-      iconColor: 'text-emerald-600',
-      iconBg: 'bg-emerald-50',
-      valueColor: 'text-brand-900',
+      iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50', valueColor: 'text-brand-900',
     },
     {
       label: 'Produção hoje',
@@ -131,21 +250,13 @@ export default function DashboardPage() {
       icon: Factory,
       href: '/producao',
       leftBorder: 'border-l-amber-400',
-      iconColor: 'text-amber-600',
-      iconBg: 'bg-amber-50',
-      valueColor: 'text-brand-900',
+      iconColor: 'text-amber-600', iconBg: 'bg-amber-50', valueColor: 'text-brand-900',
     },
-  ]
-
-  const quickStats = [
-    { icon: Users, label: 'Clientes', value: stats?.totalClients, href: '/clientes' },
-    { icon: Truck, label: 'Fornecedores', value: stats?.totalSuppliers, href: '/fornecedores' },
-    { icon: ShoppingCart, label: 'Compras pendentes', value: stats?.pendingPurchases, href: '/compras' },
-    { icon: Factory, label: 'Produções ativas', value: stats?.activeProdOrders, href: '/producao' },
   ]
 
   return (
     <div className="space-y-6">
+
       {/* Header */}
       <div className="flex items-start justify-between animate-slide-up">
         <div>
@@ -153,9 +264,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold text-brand-900 tracking-tight" suppressHydrationWarning>
             {user?.name.split(' ')[0] ?? '...'}
           </h1>
-          <p className="text-sm text-brand-400 mt-1">
-            Resumo operacional em tempo real da sua padaria.
-          </p>
+          <p className="text-sm text-brand-400 mt-1">Resumo operacional em tempo real da sua padaria.</p>
         </div>
         <div className="hidden sm:flex items-center gap-2 text-xs text-brand-400 bg-surface-50 border border-surface-200 rounded-full px-3 py-1.5 mt-2 select-none">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse block" />
@@ -163,7 +272,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {kpiCards.map((card, i) => (
           <Link
@@ -180,19 +289,11 @@ export default function DashboardPage() {
               <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', card.iconBg)}>
                 <card.icon size={18} className={card.iconColor} strokeWidth={1.75} />
               </div>
-              <ChevronRight
-                size={14}
-                className="text-brand-200 group-hover:text-brand-400 group-hover:translate-x-0.5 transition-all mt-1"
-              />
+              <ChevronRight size={14} className="text-brand-200 group-hover:text-brand-400 group-hover:translate-x-0.5 transition-all mt-1" />
             </div>
             <div className="mt-4">
               <p className="text-xs font-medium text-brand-400 uppercase tracking-wide">{card.label}</p>
-              <p
-                className={cn(
-                  'text-2xl font-bold mt-1 tracking-tight',
-                  card.value === null ? 'text-brand-200 animate-pulse' : card.valueColor,
-                )}
-              >
+              <p className={cn('text-2xl font-bold mt-1 tracking-tight', card.value === null ? 'text-brand-200 animate-pulse' : card.valueColor)}>
                 {card.value === null ? '...' : card.value}
               </p>
               {card.sub && <p className="text-xs text-brand-300 mt-1">{card.sub}</p>}
@@ -201,29 +302,37 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Quick stats bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {quickStats.map((item) => (
-          <Link
-            key={item.label}
-            href={item.href}
-            className="group bg-white rounded-xl border border-surface-200 px-4 py-3 flex items-center gap-3 shadow-sm hover:shadow-md hover:border-brand-200 transition-all"
-          >
-            <item.icon size={15} className="text-brand-300 group-hover:text-brand-500 transition-colors shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-brand-400 truncate">{item.label}</p>
-              <p className={cn('text-lg font-bold', loadingStats ? 'text-brand-200 animate-pulse' : 'text-brand-900')}>
-                {loadingStats ? '—' : (item.value ?? '—')}
-              </p>
-            </div>
-            <ChevronRight size={12} className="text-brand-200 group-hover:text-brand-400 shrink-0 transition-colors" />
-          </Link>
-        ))}
+      {/* Charts + Growth */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <div className="w-8 h-8 rounded-lg bg-brand-100 flex items-center justify-center shrink-0">
+                <ShoppingCart size={15} className="text-brand-600" />
+              </div>
+              <CardTitle>Compras por mês</CardTitle>
+              <span className="ml-auto text-xs text-brand-300">últimos 6 meses</span>
+            </CardHeader>
+            {!trends ? (
+              <div className="flex items-center justify-center py-14">
+                <Loader2 size={20} className="text-brand-200 animate-spin" />
+              </div>
+            ) : trends.monthlyPurchases.every((m) => m.value === 0) ? (
+              <EmptyState icon={ShoppingCart} title="Sem compras registradas" description="Nenhuma compra nos últimos 6 meses." />
+            ) : (
+              <PurchaseChart data={trends.monthlyPurchases} />
+            )}
+          </Card>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <GrowthCard icon={Users} label="Clientes" stat={trends?.clientsGrowth ?? null} href="/clientes" />
+          <GrowthCard icon={Truck} label="Fornecedores" stat={trends?.suppliersGrowth ?? null} href="/fornecedores" />
+        </div>
       </div>
 
-      {/* Middle row */}
+      {/* Top produtos + atividade */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Top produzidos — wider */}
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="w-8 h-8 rounded-lg bg-brand-100 flex items-center justify-center shrink-0">
@@ -244,10 +353,7 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-brand-900 truncate">{p.name}</p>
                       <div className="mt-1.5 h-1.5 w-full bg-surface-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-brand-400 to-brand-500 rounded-full transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
+                        <div className="h-full bg-gradient-to-r from-brand-400 to-brand-500 rounded-full" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                     <span className="text-sm font-bold text-brand-700 shrink-0 tabular-nums">{p.totalQty}</span>
@@ -258,19 +364,14 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        {/* Compras + Produções — stacked */}
         <div className="lg:col-span-3 flex flex-col gap-4">
-          {/* Compras recentes */}
           <Card>
             <CardHeader>
               <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
                 <ShoppingCart size={15} className="text-emerald-600" />
               </div>
               <CardTitle>Compras recentes</CardTitle>
-              <Link
-                href="/compras"
-                className="ml-auto flex items-center gap-1 text-xs text-brand-400 hover:text-brand-700 transition-colors"
-              >
+              <Link href="/compras" className="ml-auto flex items-center gap-1 text-xs text-brand-400 hover:text-brand-700 transition-colors">
                 Ver todas <ChevronRight size={12} />
               </Link>
             </CardHeader>
@@ -282,10 +383,7 @@ export default function DashboardPage() {
                   <div key={p.id} className="px-5 py-2.5 flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-brand-900 truncate">{p.supplierName}</p>
-                      <p className="text-xs text-brand-400">
-                        {formatDate(p.purchaseDate)}
-                        {p.invoiceNumber ? ` · NF ${p.invoiceNumber}` : ''}
-                      </p>
+                      <p className="text-xs text-brand-400">{formatDate(p.purchaseDate)}{p.invoiceNumber ? ` · NF ${p.invoiceNumber}` : ''}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm font-bold text-brand-800 tabular-nums">{formatCurrency(p.totalValue)}</span>
@@ -297,7 +395,6 @@ export default function DashboardPage() {
             )}
           </Card>
 
-          {/* Produções em aberto */}
           <Card>
             <CardHeader>
               <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
@@ -305,14 +402,9 @@ export default function DashboardPage() {
               </div>
               <CardTitle>Produções em aberto</CardTitle>
               {(activity?.activeProdOrders?.length ?? 0) > 0 && (
-                <Badge variant="gold" className="ml-1">
-                  {activity!.activeProdOrders.length}
-                </Badge>
+                <Badge variant="gold" className="ml-1">{activity!.activeProdOrders.length}</Badge>
               )}
-              <Link
-                href="/producao"
-                className="ml-auto flex items-center gap-1 text-xs text-brand-400 hover:text-brand-700 transition-colors"
-              >
+              <Link href="/producao" className="ml-auto flex items-center gap-1 text-xs text-brand-400 hover:text-brand-700 transition-colors">
                 Ver todas <ChevronRight size={12} />
               </Link>
             </CardHeader>
@@ -323,11 +415,10 @@ export default function DashboardPage() {
                 {activity.activeProdOrders.map((o) => (
                   <div key={o.id} className="px-5 py-2.5 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      {o.status === 'IN_PROGRESS' ? (
-                        <Loader2 size={13} className="text-blue-500 shrink-0 animate-spin" />
-                      ) : (
-                        <Clock size={13} className="text-brand-300 shrink-0" />
-                      )}
+                      {o.status === 'IN_PROGRESS'
+                        ? <Loader2 size={13} className="text-blue-500 shrink-0 animate-spin" />
+                        : <Clock size={13} className="text-brand-300 shrink-0" />
+                      }
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-brand-900 truncate">{o.productName}</p>
                         <p className="text-xs text-brand-400">{formatDate(o.scheduledDate)} · {o.quantity} un</p>
@@ -342,7 +433,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Alertas de estoque baixo */}
+      {/* Estoque crítico */}
       <Card id="estoque-critico">
         <CardHeader>
           <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', totalLowStock > 0 ? 'bg-red-50' : 'bg-emerald-50')}>
@@ -350,14 +441,9 @@ export default function DashboardPage() {
           </div>
           <CardTitle>Estoque crítico</CardTitle>
           {totalLowStock > 0 && (
-            <Badge variant="danger" className="ml-1">
-              {totalLowStock} {totalLowStock === 1 ? 'item' : 'itens'}
-            </Badge>
+            <Badge variant="danger" className="ml-1">{totalLowStock} {totalLowStock === 1 ? 'item' : 'itens'}</Badge>
           )}
-          <Link
-            href="/estoque"
-            className="ml-auto flex items-center gap-1 text-xs text-brand-400 hover:text-brand-700 transition-colors"
-          >
+          <Link href="/estoque" className="ml-auto flex items-center gap-1 text-xs text-brand-400 hover:text-brand-700 transition-colors">
             Gerenciar <ChevronRight size={12} />
           </Link>
         </CardHeader>
@@ -386,42 +472,26 @@ export default function DashboardPage() {
                         </Badge>
                       </p>
                     </div>
-                    <span
-                      className={cn(
-                        'text-xs font-bold px-2 py-0.5 rounded-full shrink-0',
-                        severity === 'zero'
-                          ? 'bg-red-100 text-red-700'
-                          : severity === 'critical'
-                            ? 'bg-red-50 text-red-500'
-                            : 'bg-amber-50 text-amber-600',
-                      )}
-                    >
+                    <span className={cn(
+                      'text-xs font-bold px-2 py-0.5 rounded-full shrink-0',
+                      severity === 'zero' ? 'bg-red-100 text-red-700'
+                        : severity === 'critical' ? 'bg-red-50 text-red-500'
+                        : 'bg-amber-50 text-amber-600',
+                    )}>
                       {severity === 'zero' ? 'Zerado' : `${Math.round(pct)}%`}
                     </span>
                   </div>
-
-                  {/* Progress bar */}
                   <div className="h-1.5 w-full bg-surface-100 rounded-full overflow-hidden mb-2">
                     <div
-                      className={cn(
-                        'h-full rounded-full transition-all',
-                        severity === 'zero'
-                          ? 'bg-red-500'
-                          : severity === 'critical'
-                            ? 'bg-red-400'
-                            : 'bg-amber-400',
+                      className={cn('h-full rounded-full transition-all',
+                        severity === 'zero' ? 'bg-red-500' : severity === 'critical' ? 'bg-red-400' : 'bg-amber-400'
                       )}
                       style={{ width: `${Math.min(pct, 100)}%` }}
                     />
                   </div>
-
                   <div className="flex items-center justify-between text-xs text-brand-400">
-                    <span>
-                      Atual: <span className="font-semibold text-brand-700">{item.currentStock} {item.unit}</span>
-                    </span>
-                    <span>
-                      Faltam: <span className="font-semibold text-red-500">{deficit > 0 ? deficit : 0} {item.unit}</span>
-                    </span>
+                    <span>Atual: <span className="font-semibold text-brand-700">{item.currentStock} {item.unit}</span></span>
+                    <span>Faltam: <span className="font-semibold text-red-500">{deficit > 0 ? deficit : 0} {item.unit}</span></span>
                   </div>
                 </div>
               )

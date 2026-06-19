@@ -13,17 +13,29 @@ async function bootstrap() {
 
   app.use(helmet())
   app.setGlobalPrefix('api')
-  app.enableCors({ origin: corsOrigin, credentials: true })
+  app.enableCors({
+    origin: corsOrigin,
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
   app.useGlobalFilters(new GlobalExceptionFilter())
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    stopAtFirstError: true,
+  }))
 
-  const config = new DocumentBuilder()
-    .setTitle('SuperPão API')
-    .setDescription('API do Sistema de Gestão de Padaria')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build()
-  SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, config))
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('SuperPão API')
+      .setDescription('API do Sistema de Gestão de Padaria')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build()
+    SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, config))
+  }
 
   const port = process.env.API_PORT ?? 3001
   await app.listen(port)

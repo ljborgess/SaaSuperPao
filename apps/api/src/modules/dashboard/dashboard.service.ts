@@ -19,6 +19,7 @@ import type {
   DashboardActivity,
   NotificationsDto,
   NotificationDto,
+  DashboardTrends,
 } from '@superpao/shared-types'
 
 @Injectable()
@@ -258,6 +259,68 @@ export class DashboardService {
         scheduledDate: o.scheduledDate.toISOString(),
         status: o.status,
       })),
+    }
+  }
+
+  async getTrends(): Promise<DashboardTrends> {
+    const now = new Date()
+
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const startOf6MonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+
+    const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+    const [allPurchases, clientsThisMonth, clientsLastMonth, suppliersThisMonth, suppliersLastMonth, totalClients, totalSuppliers] =
+      await Promise.all([
+        this.purchaseRepo.find(
+          { purchaseDate: { $gte: startOf6MonthsAgo } },
+          { orderBy: { purchaseDate: 'ASC' } },
+        ),
+        this.clientRepo.count({ createdAt: { $gte: startOfThisMonth } }),
+        this.clientRepo.count({ createdAt: { $gte: startOfLastMonth, $lt: startOfThisMonth } }),
+        this.supplierRepo.count({ createdAt: { $gte: startOfThisMonth } }),
+        this.supplierRepo.count({ createdAt: { $gte: startOfLastMonth, $lt: startOfThisMonth } }),
+        this.clientRepo.count({ active: true }),
+        this.supplierRepo.count({ active: true }),
+      ])
+
+    const buckets = new Map<string, { value: number; count: number; month: string; year: number }>()
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = `${d.getFullYear()}-${d.getMonth()}`
+      buckets.set(key, { value: 0, count: 0, month: MONTH_LABELS[d.getMonth()], year: d.getFullYear() })
+    }
+
+    for (const p of allPurchases) {
+      const key = `${p.purchaseDate.getFullYear()}-${p.purchaseDate.getMonth()}`
+      const bucket = buckets.get(key)
+      if (bucket) {
+        bucket.value += Number(p.totalValue)
+        bucket.count += 1
+      }
+    }
+
+    const monthlyPurchases = Array.from(buckets.values()).map((b) => ({
+      month: b.month,
+      year: b.year,
+      value: Number(b.value.toFixed(2)),
+      count: b.count,
+    }))
+
+    const calcGrowth = (newThis: number, newLast: number, total: number) => ({
+      total,
+      newThisMonth: newThis,
+      newLastMonth: newLast,
+      growthPct: newLast === 0
+        ? (newThis > 0 ? 100 : 0)
+        : Number((((newThis - newLast) / newLast) * 100).toFixed(1)),
+    })
+
+    return {
+      monthlyPurchases,
+      clientsGrowth: calcGrowth(clientsThisMonth, clientsLastMonth, totalClients),
+      suppliersGrowth: calcGrowth(suppliersThisMonth, suppliersLastMonth, totalSuppliers),
     }
   }
 }

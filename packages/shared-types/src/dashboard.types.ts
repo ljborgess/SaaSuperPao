@@ -49,3 +49,23 @@ export interface DashboardActivity {
   recentPurchases: RecentPurchase[]
   activeProdOrders: ActiveProductionOrder[]
 }
+
+export interface MonthlyPurchaseStat {
+  month: string
+  year: number
+  value: number
+  count: number
+}
+
+export interface GrowthStat {
+  total: number
+  newThisMonth: number
+  newLastMonth: number
+  growthPct: number
+}
+
+export interface DashboardTrends {
+  monthlyPurchases: MonthlyPurchaseStat[]
+  clientsGrowth: GrowthStat
+  suppliersGrowth: GrowthStat
+}

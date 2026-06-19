@@ -41,8 +41,11 @@ export class UsersService {
     if (dto.email && dto.email !== user.email) {
       const conflict = await this.repo.findOne({ email: dto.email })
       if (conflict) throw new ConflictException('E-mail já cadastrado.')
+      user.email = dto.email
     }
-    Object.assign(user, dto)
+    if (dto.name !== undefined) user.name = dto.name
+    if (dto.role !== undefined) user.role = dto.role
+    if ((dto as any).password !== undefined) user.password = (dto as any).password
     await this.repo.getEntityManager().flush()
     return user
   }

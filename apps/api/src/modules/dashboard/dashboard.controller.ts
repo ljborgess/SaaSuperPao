@@ -32,4 +32,8 @@ export class DashboardController {
   @Get('notifications')
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
   getNotifications() { return this.service.getNotifications() }
+
+  @Get('trends')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  getTrends() { return this.service.getTrends() }
 }

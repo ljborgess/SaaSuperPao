@@ -1,5 +1,5 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common'
-import { Observable, tap } from 'rxjs'
+import { Observable, tap, catchError, throwError } from 'rxjs'
 import { EntityManager } from '@mikro-orm/core'
 import { AuditLog, AuditAction } from '@superpao/database'
 
@@ -16,12 +16,24 @@ export class AuditInterceptor implements NestInterceptor {
       : method === 'DELETE' ? AuditAction.DELETE
       : null
 
+    const persist = async (success: boolean) => {
+      if (!action || !user?.id) return
+      const entity = url.split('/')[2] ?? 'unknown'
+      const log = this.em.create(AuditLog, {
+        userId: user.id,
+        action,
+        entity,
+        ip: ip ?? 'unknown',
+        payload: { success },
+      } as any)
+      await this.em.persistAndFlush(log).catch(() => {})
+    }
+
     return next.handle().pipe(
-      tap(async () => {
-        if (!action || !user) return
-        const entity = url.split('/')[2] ?? 'unknown'
-        const log = this.em.create(AuditLog, { user, action, entity, ip } as any)
-        await this.em.persistAndFlush(log)
+      tap(() => persist(true)),
+      catchError((err) => {
+        persist(false)
+        return throwError(() => err)
       }),
     )
   }

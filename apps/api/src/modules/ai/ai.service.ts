@@ -38,11 +38,12 @@ export class AiService {
     message: string,
     history: ChatMessage[],
     provider: AiProvider = 'groq',
-    apiKey?: string,
-    model?: string,
   ): Promise<ChatResponse> {
-    const key = apiKey || (provider === 'groq' ? process.env.GROQ_API_KEY : undefined)
-    if (!key) throw new BadRequestException(`API key necessária para o provider "${provider}".`)
+    const SERVER_KEYS: Partial<Record<AiProvider, string | undefined>> = {
+      groq: process.env.GROQ_API_KEY,
+    }
+    const key = SERVER_KEYS[provider]
+    if (!key) throw new BadRequestException(`Provider "${provider}" não está disponível no momento.`)
 
     const context = await this.buildContext()
     const systemPrompt = `Você é o assistente inteligente da Padaria SuperPão.
@@ -52,7 +53,7 @@ Quando identificar problemas nos dados, sugira ações concretas. Nunca invente 
 
 ${context}`
 
-    const resolvedModel = model || DEFAULT_MODELS[provider]
+    const resolvedModel = DEFAULT_MODELS[provider]
     let content: string
 
     if (provider === 'groq') {

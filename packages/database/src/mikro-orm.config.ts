@@ -17,12 +17,18 @@ import { ProductionOrderItem } from './entities/production-order-item.entity'
 import { EmailLog } from './entities/email-log.entity'
 import { AuditLog } from './entities/audit-log.entity'
 
+const requireEnv = (key: string, fallback?: string): string => {
+  const val = process.env[key] ?? fallback
+  if (!val) throw new Error(`Environment variable ${key} is required`)
+  return val
+}
+
 export default defineConfig({
-  host: process.env.DATABASE_HOST ?? 'localhost',
-  port: Number(process.env.DATABASE_PORT ?? 5432),
-  user: process.env.DATABASE_USER ?? 'superpao',
-  password: process.env.DATABASE_PASSWORD ?? 'superpao',
-  dbName: process.env.DATABASE_NAME ?? 'superpao',
+  host: requireEnv('DATABASE_HOST', 'localhost'),
+  port: Number(requireEnv('DATABASE_PORT', '5432')),
+  user: requireEnv('DATABASE_USER', 'superpao'),
+  password: requireEnv('DATABASE_PASSWORD'),
+  dbName: requireEnv('DATABASE_NAME', 'superpao'),
   entities: [
     User,
     Client,
