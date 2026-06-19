@@ -44,7 +44,7 @@ export class UsersService {
       user.email = dto.email
     }
     if (dto.name !== undefined) user.name = dto.name
-    if (dto.role !== undefined) user.role = dto.role
+    if (dto.role !== undefined) user.role = dto.role as any
     if ((dto as any).password !== undefined) user.password = (dto as any).password
     await this.repo.getEntityManager().flush()
     return user
