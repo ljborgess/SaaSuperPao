@@ -3,7 +3,8 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../common/guards/roles.guard'
 import { Roles } from '../../common/decorators/roles.decorator'
-import { UserRole } from '@superpao/database'
+import { CurrentUser } from '../../common/decorators/current-user.decorator'
+import { UserRole, User } from '@superpao/database'
 import { InventoryService } from './inventory.service'
 import type { CreateIngredientDto, UpdateIngredientDto, CreateStockMovementDto, PaginationQuery } from '@superpao/shared-types'
 
@@ -50,7 +51,7 @@ export class InventoryController {
 
   @Post('movements')
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
-  createMovement(@Body() dto: CreateStockMovementDto) {
-    return this.service.createMovement(dto)
+  createMovement(@Body() dto: CreateStockMovementDto, @CurrentUser() user: User) {
+    return this.service.createMovement(dto, user.id)
   }
 }

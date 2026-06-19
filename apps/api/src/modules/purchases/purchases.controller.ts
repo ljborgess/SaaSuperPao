@@ -6,7 +6,7 @@ import { Roles } from '../../common/decorators/roles.decorator'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { UserRole, User } from '@superpao/database'
 import { PurchasesService } from './purchases.service'
-import type { CreatePurchaseDto, PaginationQuery } from '@superpao/shared-types'
+import type { CreatePurchaseDto, UpdatePurchaseDto, PaginationQuery } from '@superpao/shared-types'
 
 @ApiTags('Purchases')
 @ApiBearerAuth()
@@ -31,11 +31,18 @@ export class PurchasesController {
     return this.service.create(dto, user.id)
   }
 
+  @Patch(':id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Update pending purchase metadata' })
+  update(@Param('id') id: string, @Body() dto: UpdatePurchaseDto) {
+    return this.service.update(id, dto)
+  }
+
   @Patch(':id/receive')
   @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.OPERATOR)
   @ApiOperation({ summary: 'Mark purchase as received and update stock' })
-  receive(@Param('id') id: string) {
-    return this.service.receive(id)
+  receive(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.service.receive(id, user.id)
   }
 
   @Delete(':id')

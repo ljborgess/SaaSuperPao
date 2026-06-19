@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@mikro-orm/nestjs'
 import { EntityRepository } from '@mikro-orm/core'
-import { StockMovement, Ingredient, Product, MovementType, MovementReason } from '@superpao/database'
+import { StockMovement, Ingredient, Product, User, MovementType, MovementReason } from '@superpao/database'
 import type { CreateIngredientDto, UpdateIngredientDto, CreateStockMovementDto, PaginationQuery } from '@superpao/shared-types'
 import { parsePagination, buildPaginatedResponse } from '@superpao/shared-utils'
 
@@ -11,6 +11,7 @@ export class InventoryService {
     @InjectRepository(StockMovement) private readonly movementRepo: EntityRepository<StockMovement>,
     @InjectRepository(Ingredient) private readonly ingredientRepo: EntityRepository<Ingredient>,
     @InjectRepository(Product) private readonly productRepo: EntityRepository<Product>,
+    @InjectRepository(User) private readonly userRepo: EntityRepository<User>,
   ) {}
 
   async findAllIngredients(query: PaginationQuery) {
@@ -60,8 +61,11 @@ export class InventoryService {
     return buildPaginatedResponse(data, total, page, limit)
   }
 
-  async createMovement(dto: CreateStockMovementDto): Promise<StockMovement> {
+  async createMovement(dto: CreateStockMovementDto, userId: string): Promise<StockMovement> {
     const em = this.movementRepo.getEntityManager()
+
+    const createdBy = await this.userRepo.findOne(userId)
+    if (!createdBy) throw new NotFoundException('Usuário não encontrado.')
 
     let ingredient: Ingredient | null = null
     let product: Product | null = null
@@ -70,11 +74,11 @@ export class InventoryService {
     if (dto.ingredientId) {
       ingredient = await this.ingredientRepo.findOne(dto.ingredientId)
       if (!ingredient) throw new NotFoundException('Ingrediente não encontrado.')
-      previousStock = ingredient.currentStock
+      previousStock = Number(ingredient.currentStock)
     } else if (dto.productId) {
       product = await this.productRepo.findOne(dto.productId)
       if (!product) throw new NotFoundException('Produto não encontrado.')
-      previousStock = product.currentStock
+      previousStock = Number(product.currentStock)
     } else {
       throw new BadRequestException('Informe ingredientId ou productId.')
     }
@@ -97,6 +101,7 @@ export class InventoryService {
       reason: dto.reason as unknown as MovementReason,
       ingredient,
       product,
+      createdBy,
     } as any)
 
     await em.persistAndFlush([...(ingredient ? [ingredient] : []), ...(product ? [product] : []), movement])

@@ -11,10 +11,17 @@ import {
   StockMovement,
   User,
   ProductionStatus,
+  ProductionMode,
   MovementType,
   MovementReason,
 } from '@superpao/database'
-import type { CreateProductionOrderDto, PaginationQuery } from '@superpao/shared-types'
+import type {
+  CreateProductionOrderDto,
+  UpdateConsumptionDto,
+  UpdateProductionOrderDto,
+  ProductionVarianceDto,
+  PaginationQuery,
+} from '@superpao/shared-types'
 import { parsePagination, buildPaginatedResponse } from '@superpao/shared-utils'
 
 @Injectable()
@@ -83,6 +90,7 @@ export class ProductionService {
       quantity: dto.quantity,
       responsible,
       status: ProductionStatus.PENDING,
+      mode: dto.mode ?? ProductionMode.AUTOMATIC,
       scheduledDate: dto.scheduledDate ? new Date(dto.scheduledDate) : new Date(),
       notes: dto.notes,
       items: orderItems,
@@ -92,11 +100,69 @@ export class ProductionService {
     return order
   }
 
-  async complete(id: string): Promise<ProductionOrder> {
+  async update(id: string, dto: UpdateProductionOrderDto): Promise<ProductionOrder> {
+    const order = await this.findOne(id)
+    if (order.status === ProductionStatus.COMPLETED || order.status === ProductionStatus.CANCELLED) {
+      throw new BadRequestException('Não é possível editar uma ordem já concluída ou cancelada.')
+    }
+    if (dto.scheduledDate) order.scheduledDate = new Date(dto.scheduledDate)
+    if (dto.notes !== undefined) order.notes = dto.notes
+    await this.orderRepo.getEntityManager().flush()
+    return order
+  }
+
+  async updateConsumption(id: string, dto: UpdateConsumptionDto): Promise<ProductionOrder> {
+    const order = await this.findOne(id)
+
+    if (order.mode !== ProductionMode.MANUAL) {
+      throw new BadRequestException('Consumo manual só pode ser registrado em ordens com modo MANUAL.')
+    }
+
+    if (order.status === ProductionStatus.COMPLETED || order.status === ProductionStatus.CANCELLED) {
+      throw new BadRequestException('Não é possível alterar consumo de uma ordem já concluída ou cancelada.')
+    }
+
+    const em = this.orderRepo.getEntityManager()
+
+    for (const input of dto.items) {
+      if (input.consumedQty <= 0) {
+        throw new BadRequestException(`Quantidade consumida deve ser maior que zero.`)
+      }
+
+      const orderItem = order.items
+        .getItems()
+        .find((i) => i.ingredient.id === input.ingredientId)
+
+      if (!orderItem) {
+        throw new BadRequestException(
+          `Ingrediente com id "${input.ingredientId}" não pertence a esta ordem de produção.`,
+        )
+      }
+
+      orderItem.consumedQty = input.consumedQty
+    }
+
+    await em.flush()
+    return order
+  }
+
+  async complete(id: string, userId: string): Promise<ProductionOrder> {
     const order = await this.findOne(id)
     if (order.status !== ProductionStatus.IN_PROGRESS && order.status !== ProductionStatus.PENDING) {
       throw new BadRequestException('Apenas ordens planejadas ou em andamento podem ser concluídas.')
     }
+
+    if (order.mode === ProductionMode.MANUAL) {
+      const unfilledItem = order.items.getItems().find((i) => i.consumedQty == null)
+      if (unfilledItem) {
+        throw new BadRequestException(
+          `Modo manual: informe o consumo real de todos os ingredientes antes de concluir. Ingrediente pendente: "${unfilledItem.ingredient.name}".`,
+        )
+      }
+    }
+
+    const createdBy = await this.userRepo.findOne(userId)
+    if (!createdBy) throw new NotFoundException('Usuário não encontrado.')
 
     const em = this.orderRepo.getEntityManager()
     order.status = ProductionStatus.COMPLETED
@@ -104,14 +170,15 @@ export class ProductionService {
 
     const movements: StockMovement[] = []
 
-    // Deduct ingredients (OUT)
     for (const item of order.items) {
       const ingredient = item.ingredient
-      const previousStock = ingredient.currentStock
-      const consumed = item.consumedQty ?? item.requiredQty
+      const previousStock = Number(ingredient.currentStock)
+      const consumed = Number(order.mode === ProductionMode.MANUAL ? item.consumedQty! : item.requiredQty)
       const newStock = previousStock - consumed
 
-      if (newStock < 0) throw new BadRequestException(`Estoque insuficiente para ingrediente: ${ingredient.name}`)
+      if (newStock < 0) {
+        throw new BadRequestException(`Estoque insuficiente para ingrediente: ${ingredient.name}`)
+      }
 
       ingredient.currentStock = newStock
       const movement = this.movementRepo.create({
@@ -121,23 +188,28 @@ export class ProductionService {
         newStock,
         reason: MovementReason.PRODUCTION,
         ingredient,
+        createdBy,
+        referenceId: order.id,
+        referenceType: 'PRODUCTION',
       } as any)
       movements.push(movement)
     }
 
-    // Add produced product (IN)
     const product = order.product
-    const prevProductStock = product.currentStock
-    const newProductStock = prevProductStock + order.quantity
+    const prevProductStock = Number(product.currentStock)
+    const newProductStock = prevProductStock + Number(order.quantity)
     product.currentStock = newProductStock
 
     const productMovement = this.movementRepo.create({
       type: MovementType.IN,
-      quantity: order.quantity,
+      quantity: Number(order.quantity),
       previousStock: prevProductStock,
       newStock: newProductStock,
       reason: MovementReason.PRODUCTION,
       product,
+      createdBy,
+      referenceId: order.id,
+      referenceType: 'PRODUCTION',
     } as any)
     movements.push(productMovement)
 
@@ -153,5 +225,45 @@ export class ProductionService {
     order.status = ProductionStatus.CANCELLED
     await this.orderRepo.getEntityManager().flush()
     return order
+  }
+
+  async getVariance(id: string): Promise<ProductionVarianceDto> {
+    const order = await this.findOne(id)
+
+    if (order.status !== ProductionStatus.COMPLETED) {
+      throw new BadRequestException('Variância só está disponível para ordens concluídas.')
+    }
+
+    let totalVarianceCost = 0
+
+    const items = order.items.getItems().map((item) => {
+      const required = Number(item.requiredQty)
+      const consumed = item.consumedQty != null ? Number(item.consumedQty) : required
+      const variance = Number((consumed - required).toFixed(4))
+      const variancePct = required > 0 ? Number(((variance / required) * 100).toFixed(2)) : 0
+      const costPrice = Number(item.ingredient.costPrice)
+      const varianceCost = Number((variance * costPrice).toFixed(2))
+
+      totalVarianceCost += varianceCost
+
+      return {
+        ingredientId: item.ingredient.id,
+        ingredientName: item.ingredient.name,
+        unit: item.ingredient.unit,
+        requiredQty: required,
+        consumedQty: consumed,
+        variance,
+        variancePct,
+        costPrice,
+        varianceCost,
+      }
+    })
+
+    return {
+      orderId: order.id,
+      mode: order.mode as 'AUTOMATIC' | 'MANUAL',
+      items,
+      totalVarianceCost: Number(totalVarianceCost.toFixed(2)),
+    }
   }
 }

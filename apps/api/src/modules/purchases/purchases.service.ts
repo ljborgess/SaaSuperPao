@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@mikro-orm/nestjs'
 import { EntityRepository } from '@mikro-orm/core'
 import { Purchase, PurchaseItem, Ingredient, Supplier, StockMovement, User, PurchaseStatus, MovementType, MovementReason } from '@superpao/database'
-import type { CreatePurchaseDto, PaginationQuery } from '@superpao/shared-types'
+import type { CreatePurchaseDto, UpdatePurchaseDto, PaginationQuery } from '@superpao/shared-types'
 import { parsePagination, buildPaginatedResponse } from '@superpao/shared-utils'
 
 @Injectable()
@@ -79,11 +79,26 @@ export class PurchasesService {
     return purchase
   }
 
-  async receive(id: string): Promise<Purchase> {
+  async update(id: string, dto: UpdatePurchaseDto): Promise<Purchase> {
+    const purchase = await this.findOne(id)
+    if (purchase.status !== PurchaseStatus.PENDING) {
+      throw new BadRequestException('Apenas compras pendentes podem ser editadas.')
+    }
+    if (dto.purchaseDate) purchase.purchaseDate = new Date(dto.purchaseDate)
+    if (dto.invoiceNumber !== undefined) purchase.invoiceNumber = dto.invoiceNumber
+    if (dto.notes !== undefined) purchase.notes = dto.notes
+    await this.purchaseRepo.getEntityManager().flush()
+    return purchase
+  }
+
+  async receive(id: string, userId: string): Promise<Purchase> {
     const purchase = await this.findOne(id)
     if (purchase.status !== PurchaseStatus.PENDING) {
       throw new BadRequestException('Apenas compras pendentes podem ser recebidas.')
     }
+
+    const createdBy = await this.userRepo.findOne(userId)
+    if (!createdBy) throw new NotFoundException('Usuário não encontrado.')
 
     const em = this.purchaseRepo.getEntityManager()
     purchase.status = PurchaseStatus.RECEIVED
@@ -92,17 +107,20 @@ export class PurchasesService {
 
     for (const item of purchase.items) {
       const ingredient = item.ingredient
-      const previousStock = ingredient.currentStock
-      const newStock = previousStock + item.quantity
+      const previousStock = Number(ingredient.currentStock)
+      const newStock = previousStock + Number(item.quantity)
       ingredient.currentStock = newStock
 
       const movement = this.movementRepo.create({
         type: MovementType.IN,
-        quantity: item.quantity,
+        quantity: Number(item.quantity),
         previousStock,
         newStock,
         reason: MovementReason.PURCHASE,
         ingredient,
+        createdBy,
+        referenceId: purchase.id,
+        referenceType: 'PURCHASE',
       } as any)
       movements.push(movement)
     }
