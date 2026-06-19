@@ -10,6 +10,7 @@ import type { UserDto, UserRole, PaginatedResponse } from '@superpao/shared-type
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Drawer } from '@/components/ui/drawer'
 import { SearchInput } from '@/components/ui/search-input'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -99,57 +100,38 @@ export default function UsuariosPage() {
         }
       />
 
-      {showForm && (
-        <Card padding className="mb-6 animate-slide-up">
-          <h3 className="text-sm font-semibold text-brand-900 mb-4">
-            {editing ? 'Editar usuário' : 'Novo usuário'}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                required
-                placeholder="Nome *"
-                className="input-base"
-                value={form.name}
-                onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-              />
-              <input
-                required
-                type="email"
-                placeholder="E-mail *"
-                className="input-base"
-                value={form.email}
-                onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
-              />
-              {!editing && (
-                <input
-                  required
-                  type="password"
-                  placeholder="Senha *"
-                  className="input-base"
-                  value={form.password}
-                  onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
-                />
-              )}
-              <select
-                className="input-base"
-                value={form.role}
-                onChange={(e) => setForm(f => ({ ...f, role: e.target.value as UserRole }))}
-              >
-                <option value="OPERATOR">Operador</option>
-                <option value="MANAGER">Gerente</option>
-                <option value="ADMIN">Admin</option>
-              </select>
+      <Drawer open={showForm} onClose={closeForm} title={editing ? 'Editar usuário' : 'Novo usuário'}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-6 py-5">
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Nome *</label>
+            <input required className="input-base w-full" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">E-mail *</label>
+            <input required type="email" className="input-base w-full" value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))} />
+          </div>
+          {!editing && (
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Senha *</label>
+              <input required type="password" className="input-base w-full" value={form.password} onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))} />
             </div>
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
-              <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
+          )}
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Perfil</label>
+            <select className="input-base w-full" value={form.role} onChange={(e) => setForm(f => ({ ...f, role: e.target.value as UserRole }))}>
+              <option value="OPERATOR">Operador</option>
+              <option value="MANAGER">Gerente</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          </div>
+          <div className="mt-auto pt-4 flex gap-2 justify-end border-t border-surface-100">
+            <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
+            <Button type="submit" disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Salvando...' : editing ? 'Salvar alterações' : 'Criar usuário'}
+            </Button>
+          </div>
+        </form>
+      </Drawer>
 
       <Card>
         <div className="px-6 py-4 border-b border-surface-200">

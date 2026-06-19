@@ -10,6 +10,7 @@ import type { ClientDto, PaginatedResponse } from '@superpao/shared-types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Drawer } from '@/components/ui/drawer'
 import { SearchInput } from '@/components/ui/search-input'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -101,29 +102,42 @@ export default function ClientesPage() {
         }
       />
 
-      {showForm && (
-        <Card padding className="mb-6 animate-slide-up">
-          <h3 className="text-sm font-semibold text-brand-900 mb-4">
-            {editing ? 'Editar cliente' : 'Novo cliente'}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input required placeholder="Nome *" className="input-base" {...field('name')} />
-              <input placeholder="E-mail" type="email" className="input-base" {...field('email')} />
-              <input placeholder="Telefone" className="input-base" {...field('phone')} />
-              <input placeholder="WhatsApp" className="input-base" {...field('whatsapp')} />
-              <input placeholder="CPF / CNPJ" className="input-base" {...field('cpfCnpj')} />
-              <input placeholder="Endereço" className="input-base" {...field('address')} />
+      <Drawer open={showForm} onClose={closeForm} title={editing ? 'Editar cliente' : 'Novo cliente'}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-6 py-5">
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Nome *</label>
+            <input required className="input-base w-full" {...field('name')} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Telefone</label>
+              <input className="input-base w-full" {...field('phone')} />
             </div>
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
-              <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
-              </Button>
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">WhatsApp</label>
+              <input className="input-base w-full" {...field('whatsapp')} />
             </div>
-          </form>
-        </Card>
-      )}
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">E-mail</label>
+            <input type="email" className="input-base w-full" {...field('email')} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">CPF / CNPJ</label>
+            <input className="input-base w-full" {...field('cpfCnpj')} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Endereço</label>
+            <input className="input-base w-full" {...field('address')} />
+          </div>
+          <div className="mt-auto pt-4 flex gap-2 justify-end border-t border-surface-100">
+            <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
+            <Button type="submit" disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Salvando...' : editing ? 'Salvar alterações' : 'Criar cliente'}
+            </Button>
+          </div>
+        </form>
+      </Drawer>
 
       <Card>
         <div className="px-6 py-4 border-b border-surface-200">

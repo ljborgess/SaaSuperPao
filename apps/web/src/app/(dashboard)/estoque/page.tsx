@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { PageHeader } from '@/components/layout/page-header'
 import { toast } from 'sonner'
-import { Boxes, TrendingDown, TrendingUp, ArrowLeftRight, Plus, X, Pencil } from 'lucide-react'
+import { Boxes, TrendingDown, TrendingUp, ArrowLeftRight, Plus, Pencil } from 'lucide-react'
 import type {
   StockMovementDto,
   PaginatedResponse,
@@ -21,6 +21,7 @@ import type {
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Drawer } from '@/components/ui/drawer'
 import { SearchInput } from '@/components/ui/search-input'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -230,65 +231,40 @@ export default function EstoquePage() {
         ))}
       </div>
 
+      <Drawer open={showIngForm} onClose={closeIngForm} title={editingIng ? 'Editar ingrediente' : 'Novo ingrediente'}>
+        <form onSubmit={handleIngSubmit} className="flex flex-col gap-4 px-6 py-5">
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Nome *</label>
+            <input required className="input-base w-full" value={ingForm.name} onChange={e => setIngForm(f => ({ ...f, name: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Unidade *</label>
+              <select required className="input-base w-full" value={ingForm.unit} onChange={e => setIngForm(f => ({ ...f, unit: e.target.value as IngredientUnit }))}>
+                {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Custo unit. *</label>
+              <input required type="number" step="0.01" min="0" placeholder="0,00" className="input-base w-full" value={ingForm.costPrice} onChange={e => setIngForm(f => ({ ...f, costPrice: e.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Estoque mínimo</label>
+            <input type="number" step="0.001" min="0" placeholder="0" className="input-base w-full" value={ingForm.minStock} onChange={e => setIngForm(f => ({ ...f, minStock: e.target.value }))} />
+          </div>
+          <div className="mt-auto pt-4 flex gap-2 justify-end border-t border-surface-100">
+            <Button type="button" variant="ghost" onClick={closeIngForm}>Cancelar</Button>
+            <Button type="submit" disabled={ingMutation.isPending}>
+              {ingMutation.isPending ? 'Salvando...' : editingIng ? 'Salvar alterações' : 'Criar ingrediente'}
+            </Button>
+          </div>
+        </form>
+      </Drawer>
+
       {/* ── INGREDIENTES TAB ── */}
       {tab === 'ingredientes' && (
         <>
-          {showIngForm && (
-            <Card padding className="mb-6 animate-slide-up">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-brand-900">
-                  {editingIng ? 'Editar ingrediente' : 'Novo ingrediente'}
-                </h3>
-                <Button type="button" variant="icon" size="icon" onClick={closeIngForm} aria-label="Fechar">
-                  <X size={16} />
-                </Button>
-              </div>
-              <form onSubmit={handleIngSubmit} className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input
-                    required
-                    placeholder="Nome *"
-                    className="input-base sm:col-span-2"
-                    value={ingForm.name}
-                    onChange={e => setIngForm(f => ({ ...f, name: e.target.value }))}
-                  />
-                  <select
-                    required
-                    className="input-base"
-                    value={ingForm.unit}
-                    onChange={e => setIngForm(f => ({ ...f, unit: e.target.value as IngredientUnit }))}
-                  >
-                    {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                  </select>
-                  <input
-                    required
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="Preço de custo *"
-                    className="input-base"
-                    value={ingForm.costPrice}
-                    onChange={e => setIngForm(f => ({ ...f, costPrice: e.target.value }))}
-                  />
-                  <input
-                    type="number"
-                    step="0.001"
-                    min="0"
-                    placeholder="Estoque mínimo"
-                    className="input-base"
-                    value={ingForm.minStock}
-                    onChange={e => setIngForm(f => ({ ...f, minStock: e.target.value }))}
-                  />
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="ghost" onClick={closeIngForm}>Cancelar</Button>
-                  <Button type="submit" disabled={ingMutation.isPending}>
-                    {ingMutation.isPending ? 'Salvando...' : 'Salvar'}
-                  </Button>
-                </div>
-              </form>
-            </Card>
-          )}
 
           <Card>
             <div className="px-6 py-4 border-b border-surface-200">
@@ -360,59 +336,64 @@ export default function EstoquePage() {
         </>
       )}
 
+      <Drawer open={showMovForm} onClose={() => setShowMovForm(false)} title="Registrar movimentação">
+        <form onSubmit={handleMovSubmit} className="flex flex-col gap-4 px-6 py-5">
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Tipo</label>
+            <div className="flex rounded-xl border border-surface-200 overflow-hidden">
+              {(['IN', 'OUT', 'ADJUSTMENT'] as MovementType[]).map(t => (
+                <button key={t} type="button" onClick={() => setMovField('type', t)}
+                  className={cn('flex-1 py-2 text-sm font-semibold transition-colors',
+                    movForm.type === t
+                      ? t === 'IN' ? 'bg-emerald-500 text-white' : t === 'OUT' ? 'bg-red-500 text-white' : 'bg-amber-400 text-white'
+                      : 'text-brand-400 hover:bg-surface-50')}>
+                  {t === 'IN' ? 'Entrada' : t === 'OUT' ? 'Saída' : 'Ajuste'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Tipo de item</label>
+            <select className="input-base w-full" value={movForm.itemType} onChange={e => setMovField('itemType', e.target.value as 'ingredient' | 'product')}>
+              <option value="ingredient">Ingrediente</option>
+              <option value="product">Produto</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Item *</label>
+            <select required className="input-base w-full" value={movForm.itemId} onChange={e => setMovField('itemId', e.target.value)}>
+              <option value="">Selecionar...</option>
+              {(movItemList as Array<{ id: string; name: string; unit: string }>).map(item => (
+                <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Quantidade *</label>
+              <input required type="number" step="0.001" min="0.001" className="input-base w-full" value={movForm.quantity} onChange={e => setMovField('quantity', e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Motivo *</label>
+              <select required className="input-base w-full" value={movForm.reason} onChange={e => setMovField('reason', e.target.value as MovementReason)}>
+                {movReasons.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Observações</label>
+            <input className="input-base w-full" placeholder="Opcional" value={movForm.notes} onChange={e => setMovField('notes', e.target.value)} />
+          </div>
+          <div className="mt-auto pt-4 flex gap-2 justify-end border-t border-surface-100">
+            <Button type="button" variant="ghost" onClick={() => setShowMovForm(false)}>Cancelar</Button>
+            <Button type="submit" disabled={movMutation.isPending}>{movMutation.isPending ? 'Registrando...' : 'Registrar'}</Button>
+          </div>
+        </form>
+      </Drawer>
+
       {/* ── MOVIMENTAÇÕES TAB ── */}
       {tab === 'movimentacoes' && (
         <>
-          {showMovForm && (
-            <Card padding className="mb-6 animate-slide-up">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-brand-900">Registrar movimentação</h3>
-                <Button type="button" variant="icon" size="icon" onClick={() => setShowMovForm(false)} aria-label="Fechar">
-                  <X size={16} />
-                </Button>
-              </div>
-              <form onSubmit={handleMovSubmit} className="space-y-4">
-                <div className="flex rounded-xl border border-surface-200 overflow-hidden w-fit">
-                  {(['IN', 'OUT', 'ADJUSTMENT'] as MovementType[]).map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setMovField('type', t)}
-                      className={cn(
-                        'px-5 py-2 text-sm font-semibold transition-colors',
-                        movForm.type === t
-                          ? t === 'IN' ? 'bg-emerald-500 text-white' : t === 'OUT' ? 'bg-red-500 text-white' : 'bg-amber-400 text-white'
-                          : 'text-brand-400 hover:bg-surface-50',
-                      )}
-                    >
-                      {t === 'IN' ? 'Entrada' : t === 'OUT' ? 'Saída' : 'Ajuste'}
-                    </button>
-                  ))}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <select className="input-base" value={movForm.itemType} onChange={e => setMovField('itemType', e.target.value as 'ingredient' | 'product')}>
-                    <option value="ingredient">Ingrediente</option>
-                    <option value="product">Produto</option>
-                  </select>
-                  <select required className="input-base sm:col-span-2" value={movForm.itemId} onChange={e => setMovField('itemId', e.target.value)}>
-                    <option value="">{movForm.itemType === 'ingredient' ? 'Selecione o ingrediente *' : 'Selecione o produto *'}</option>
-                    {(movItemList as Array<{ id: string; name: string; unit: string }>).map(item => (
-                      <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>
-                    ))}
-                  </select>
-                  <input required type="number" step="0.001" min="0.001" placeholder="Quantidade *" className="input-base" value={movForm.quantity} onChange={e => setMovField('quantity', e.target.value)} />
-                  <select required className="input-base" value={movForm.reason} onChange={e => setMovField('reason', e.target.value as MovementReason)}>
-                    {movReasons.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                  </select>
-                  <input placeholder="Observações (opcional)" className="input-base" value={movForm.notes} onChange={e => setMovField('notes', e.target.value)} />
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button type="button" variant="ghost" onClick={() => setShowMovForm(false)}>Cancelar</Button>
-                  <Button type="submit" disabled={movMutation.isPending}>{movMutation.isPending ? 'Salvando...' : 'Registrar'}</Button>
-                </div>
-              </form>
-            </Card>
-          )}
 
           <Card>
             <div className="px-6 py-4 border-b border-surface-200">

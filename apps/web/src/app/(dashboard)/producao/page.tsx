@@ -5,11 +5,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { PageHeader } from '@/components/layout/page-header'
 import { toast } from 'sonner'
-import { Factory, Plus, X, Pencil, CheckCircle2, XCircle } from 'lucide-react'
+import { Factory, Plus, Pencil, CheckCircle2, XCircle } from 'lucide-react'
 import type { ProductionOrderDto, ProductDto, UserDto, PaginatedResponse } from '@superpao/shared-types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Drawer } from '@/components/ui/drawer'
 import { SearchInput } from '@/components/ui/search-input'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -140,93 +141,67 @@ export default function ProducaoPage() {
         }
       />
 
-      {showForm && (
-        <Card padding className="mb-6 animate-slide-up">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-brand-900">
-              {editingOrder ? 'Editar ordem' : 'Nova ordem de produção'}
-            </h3>
-            <Button type="button" variant="icon" size="icon" onClick={closeForm} aria-label="Fechar">
-              <X size={16} />
-            </Button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-3">
-            {!editingOrder && (
-              <>
-                {/* Mode toggle */}
-                <div>
-                  <p className="text-xs text-brand-500 mb-1.5 font-medium">Modo de produção</p>
-                  <div className="flex rounded-xl border border-surface-200 overflow-hidden w-fit">
-                    {(['AUTOMATIC', 'MANUAL'] as const).map(m => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setMode(m)}
-                        className={cn(
-                          'px-5 py-2 text-sm font-semibold transition-colors',
-                          mode === m ? 'bg-brand-600 text-white' : 'text-brand-400 hover:bg-surface-50',
-                        )}
-                      >
-                        {m === 'AUTOMATIC' ? 'Automático' : 'Manual'}
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-brand-400 mt-1">
-                    {mode === 'AUTOMATIC'
-                      ? 'Deduz os ingredientes conforme a receita ao concluir.'
-                      : 'Você informa o consumo real de cada ingrediente antes de concluir.'}
-                  </p>
+      <Drawer open={showForm} onClose={closeForm} title={editingOrder ? 'Editar ordem' : 'Nova ordem de produção'}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-6 py-5">
+          {!editingOrder && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-brand-500 mb-1.5">Modo de produção</label>
+                <div className="flex rounded-xl border border-surface-200 overflow-hidden">
+                  {(['AUTOMATIC', 'MANUAL'] as const).map(m => (
+                    <button key={m} type="button" onClick={() => setMode(m)}
+                      className={cn('flex-1 py-2 text-sm font-semibold transition-colors',
+                        mode === m ? 'bg-brand-600 text-white' : 'text-brand-400 hover:bg-surface-50')}>
+                      {m === 'AUTOMATIC' ? 'Automático' : 'Manual'}
+                    </button>
+                  ))}
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <select required className="input-base" value={productId} onChange={e => setProductId(e.target.value)}>
-                    <option value="">Produto *</option>
-                    {products?.data.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
-                  <input
-                    required
-                    type="number"
-                    step="0.001"
-                    min="0"
-                    placeholder="Quantidade *"
-                    className="input-base"
-                    value={quantity}
-                    onChange={e => setQuantity(e.target.value)}
-                  />
-                  <select required className="input-base" value={responsibleId} onChange={e => setResponsibleId(e.target.value)}>
-                    <option value="">Responsável *</option>
+                <p className="text-xs text-brand-400 mt-1.5">
+                  {mode === 'AUTOMATIC'
+                    ? 'Deduz os ingredientes conforme a receita ao concluir.'
+                    : 'Você informa o consumo real de cada ingrediente antes de concluir.'}
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-brand-500 mb-1.5">Produto *</label>
+                <select required className="input-base w-full" value={productId} onChange={e => setProductId(e.target.value)}>
+                  <option value="">Selecionar...</option>
+                  {products?.data.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-brand-500 mb-1.5">Quantidade *</label>
+                  <input required type="number" step="0.001" min="0" className="input-base w-full" value={quantity} onChange={e => setQuantity(e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-brand-500 mb-1.5">Responsável *</label>
+                  <select required className="input-base w-full" value={responsibleId} onChange={e => setResponsibleId(e.target.value)}>
+                    <option value="">Selecionar...</option>
                     {users?.data.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                 </div>
-              </>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input
-                type="date"
-                placeholder="Data prevista"
-                className="input-base"
-                value={scheduledDate}
-                onChange={e => setScheduledDate(e.target.value)}
-              />
-              <input
-                placeholder="Observações"
-                className={cn('input-base', !editingOrder && 'sm:col-span-1')}
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-              />
+              </div>
+            </>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Data prevista</label>
+              <input type="date" className="input-base w-full" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} />
             </div>
-
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
-              <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Salvando...' : editingOrder ? 'Salvar' : 'Criar ordem'}
-              </Button>
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Observações</label>
+              <input className="input-base w-full" placeholder="Opcional" value={notes} onChange={e => setNotes(e.target.value)} />
             </div>
-          </form>
-        </Card>
-      )}
+          </div>
+          <div className="mt-auto pt-4 flex gap-2 justify-end border-t border-surface-100">
+            <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
+            <Button type="submit" disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Salvando...' : editingOrder ? 'Salvar alterações' : 'Criar ordem'}
+            </Button>
+          </div>
+        </form>
+      </Drawer>
 
       <Card>
         <div className="px-6 py-4 border-b border-surface-200">

@@ -9,6 +9,7 @@ import { Plus, Pencil, Trash2, Tag } from 'lucide-react'
 import type { CategoryDto, PaginatedResponse } from '@superpao/shared-types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Drawer } from '@/components/ui/drawer'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
 import { cn } from '@/lib/utils'
@@ -79,36 +80,24 @@ export default function CategoriasPage() {
         }
       />
 
-      {showForm && (
-        <Card padding className="mb-6 animate-slide-up">
-          <h3 className="text-sm font-semibold text-brand-900 mb-4">
-            {editing ? 'Editar categoria' : 'Nova categoria'}
-          </h3>
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-            <input
-              required
-              placeholder="Nome da categoria"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="input-base flex-1"
-            />
-            <input
-              placeholder="Descrição (opcional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="input-base flex-1"
-            />
-            <div className="flex gap-2">
-              <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
-              </Button>
-              <Button type="button" variant="ghost" onClick={closeForm}>
-                Cancelar
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
+      <Drawer open={showForm} onClose={closeForm} title={editing ? 'Editar categoria' : 'Nova categoria'}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-6 py-5">
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Nome *</label>
+            <input required className="input-base w-full" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Descrição</label>
+            <input className="input-base w-full" placeholder="Opcional" value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <div className="mt-auto pt-4 flex gap-2 justify-end border-t border-surface-100">
+            <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
+            <Button type="submit" disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Salvando...' : editing ? 'Salvar alterações' : 'Criar categoria'}
+            </Button>
+          </div>
+        </form>
+      </Drawer>
 
       <Card>
         {isLoading ? (

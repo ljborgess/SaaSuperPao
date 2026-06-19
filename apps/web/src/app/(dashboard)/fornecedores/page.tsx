@@ -9,6 +9,7 @@ import { Plus, Pencil, Trash2, Truck } from 'lucide-react'
 import type { SupplierDto, PaginatedResponse } from '@superpao/shared-types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Drawer } from '@/components/ui/drawer'
 import { SearchInput } from '@/components/ui/search-input'
 import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -102,30 +103,46 @@ export default function FornecedoresPage() {
         }
       />
 
-      {showForm && (
-        <Card padding className="mb-6 animate-slide-up">
-          <h3 className="text-sm font-semibold text-brand-900 mb-4">
-            {editing ? 'Editar fornecedor' : 'Novo fornecedor'}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <input required placeholder="Razão social *" className="input-base" {...field('razaoSocial')} />
-              <input placeholder="Nome fantasia" className="input-base" {...field('nomeFantasia')} />
-              <input placeholder="CNPJ" className="input-base" {...field('cnpj')} />
-              <input placeholder="Contato" className="input-base" {...field('contact')} />
-              <input placeholder="Telefone" className="input-base" {...field('phone')} />
-              <input placeholder="E-mail" type="email" className="input-base" {...field('email')} />
-              <input placeholder="Endereço" className="input-base col-span-full" {...field('address')} />
+      <Drawer open={showForm} onClose={closeForm} title={editing ? 'Editar fornecedor' : 'Novo fornecedor'}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-6 py-5">
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Razão social *</label>
+            <input required className="input-base w-full" {...field('razaoSocial')} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Nome fantasia</label>
+              <input className="input-base w-full" {...field('nomeFantasia')} />
             </div>
-            <div className="flex gap-2 justify-end">
-              <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
-              <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Salvando...' : 'Salvar'}
-              </Button>
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">CNPJ</label>
+              <input className="input-base w-full" {...field('cnpj')} />
             </div>
-          </form>
-        </Card>
-      )}
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Contato</label>
+              <input className="input-base w-full" {...field('contact')} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-brand-500 mb-1.5">Telefone</label>
+              <input className="input-base w-full" {...field('phone')} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">E-mail</label>
+            <input type="email" className="input-base w-full" {...field('email')} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-brand-500 mb-1.5">Endereço</label>
+            <input className="input-base w-full" {...field('address')} />
+          </div>
+          <div className="mt-auto pt-4 flex gap-2 justify-end border-t border-surface-100">
+            <Button type="button" variant="ghost" onClick={closeForm}>Cancelar</Button>
+            <Button type="submit" disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Salvando...' : editing ? 'Salvar alterações' : 'Criar fornecedor'}
+            </Button>
+          </div>
+        </form>
+      </Drawer>
 
       <Card>
         <div className="px-6 py-4 border-b border-surface-200">
