@@ -66,7 +66,7 @@ function isActive(pathname: string, href: string) {
   return pathname.startsWith(href)
 }
 
-function resizeImageToBase64(file: File, maxSize = 200): Promise<string> {
+function resizeImageToBase64(file: File, maxSize = 150): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(file)
@@ -74,11 +74,11 @@ function resizeImageToBase64(file: File, maxSize = 200): Promise<string> {
       URL.revokeObjectURL(url)
       const canvas = document.createElement('canvas')
       const scale = Math.min(maxSize / img.width, maxSize / img.height, 1)
-      canvas.width = img.width * scale
-      canvas.height = img.height * scale
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
       const ctx = canvas.getContext('2d')!
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-      resolve(canvas.toDataURL('image/jpeg', 0.85))
+      resolve(canvas.toDataURL('image/jpeg', 0.75))
     }
     img.onerror = reject
     img.src = url

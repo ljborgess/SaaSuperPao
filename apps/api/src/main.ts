@@ -7,6 +7,7 @@ import { GlobalExceptionFilter } from './common/filters/http-exception.filter'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
+  app.use(require('express').json({ limit: '2mb' }))
 
   const corsOrigin = process.env.WEB_URL
   if (!corsOrigin) throw new Error('WEB_URL environment variable is required')

@@ -128,12 +128,12 @@ export default function LoginPage() {
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-between p-14 w-full">
           {/* Logo */}
-          <div className="flex items-center gap-3">
+          <Link href="/" className="group flex items-center gap-3 w-fit">
             <div className="w-10 h-10 bg-gradient-to-br from-accent-gold to-brand-600 rounded-2xl flex items-center justify-center shadow-[0_0_24px_rgba(196,167,125,0.4)]">
               <Wheat size={20} className="text-[#070402]" />
             </div>
-            <span className="font-display text-xl font-semibold text-accent-cream">SuperPão</span>
-          </div>
+            <span className="font-display text-xl font-semibold text-accent-cream transition-colors duration-200 group-hover:text-accent-gold">SuperPão</span>
+          </Link>
 
           {/* Main copy */}
           <div className="space-y-8">
@@ -207,12 +207,12 @@ export default function LoginPage() {
         <div className="relative w-full max-w-[420px] animate-fade-up">
 
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-3 mb-10">
+          <Link href="/" className="group lg:hidden flex items-center gap-3 mb-10 w-fit">
             <div className="w-9 h-9 bg-gradient-to-br from-accent-gold to-brand-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(196,167,125,0.35)]">
               <Wheat size={17} className="text-[#070402]" />
             </div>
-            <span className="font-display text-xl font-semibold text-accent-cream">SuperPão</span>
-          </div>
+            <span className="font-display text-xl font-semibold text-accent-cream transition-colors duration-200 group-hover:text-accent-gold">SuperPão</span>
+          </Link>
 
           {/* Form card */}
           <div className="bg-brand-900/50 backdrop-blur-2xl border border-brand-700/50 rounded-3xl p-8 shadow-[0_32px_80px_rgba(0,0,0,0.6)]">
