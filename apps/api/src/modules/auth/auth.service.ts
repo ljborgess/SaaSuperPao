@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common'
+import { Injectable, Logger, UnauthorizedException, BadRequestException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@mikro-orm/nestjs'
 import { EntityRepository } from '@mikro-orm/core'
@@ -13,6 +13,8 @@ const LOCK_DURATION_MS = 15 * 60 * 1000 // 15 minutes
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name)
+
   constructor(
     @InjectRepository(User) private readonly userRepo: EntityRepository<User>,
     private readonly jwtService: JwtService,
@@ -87,7 +89,9 @@ export class AuthService {
     user.passwordResetToken = hashedToken
     user.passwordResetExpires = new Date(Date.now() + 3600_000)
     await this.userRepo.getEntityManager().flush()
-    await this.emailService.sendPasswordReset(email, plainToken, user.name)
+    this.emailService
+      .sendPasswordReset(email, plainToken, user.name)
+      .catch((err: Error) => this.logger.error(`Email dispatch failed: ${err.message}`))
   }
 
   async resetPassword(token: string, newPassword: string) {

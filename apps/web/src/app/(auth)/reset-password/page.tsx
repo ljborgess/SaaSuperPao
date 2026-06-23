@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -8,16 +9,31 @@ import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Wheat, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react'
+import { Wheat, ArrowLeft, Lock, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
-const schema = z.object({
-  email: z.string().email('Informe um e-mail válido'),
-})
+const schema = z
+  .object({
+    password: z.string().min(8, 'Mínimo 8 caracteres'),
+    confirmPassword: z.string().min(1, 'Confirme a senha'),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
+  })
+
 type FormData = z.infer<typeof schema>
 
-export default function ForgotPasswordPage() {
-  const [sent, setSent] = useState(false)
+function getTokenFromHash(): string | null {
+  if (typeof window === 'undefined') return null
+  const params = new URLSearchParams(window.location.hash.substring(1))
+  return params.get('token')
+}
+
+export default function ResetPasswordPage() {
+  const router = useRouter()
+  const [token, setToken] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
 
   const {
     register,
@@ -25,14 +41,25 @@ export default function ForgotPasswordPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormData>({ resolver: zodResolver(schema) })
 
+  useEffect(() => {
+    const t = getTokenFromHash()
+    if (!t) {
+      router.replace('/forgot-password')
+    } else {
+      setToken(t)
+    }
+  }, [router])
+
   async function onSubmit(data: FormData) {
     try {
-      await api.post('/api/auth/forgot-password', { email: data.email })
-      setSent(true)
+      await api.post('/api/auth/reset-password', { token, password: data.password })
+      setDone(true)
     } catch {
-      toast.error('Erro ao enviar e-mail. Tente novamente.')
+      toast.error('Token inválido ou expirado. Solicite um novo link.')
     }
   }
+
+  if (!token) return null
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface-50 px-6">
@@ -45,45 +72,50 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-surface-300/80 shadow-card p-8">
-          {sent ? (
+          {done ? (
             <div className="text-center py-4">
               <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 size={28} className="text-emerald-600" />
               </div>
-              <h2 className="text-xl font-bold text-brand-900 mb-2">E-mail enviado</h2>
+              <h2 className="text-xl font-bold text-brand-900 mb-2">Senha redefinida</h2>
               <p className="text-sm text-brand-400 leading-relaxed">
-                Verifique sua caixa de entrada e siga as instruções para redefinir sua senha.
+                Sua senha foi atualizada com sucesso. Faça login com a nova senha.
               </p>
               <Link href="/login" className="inline-block mt-6">
-                <Button variant="outline">
-                  <ArrowLeft size={16} />
-                  Voltar ao login
-                </Button>
+                <Button>Ir para o login</Button>
               </Link>
             </div>
           ) : (
             <>
               <div className="mb-6">
                 <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center mb-4">
-                  <Mail size={22} className="text-brand-600" />
+                  <Lock size={22} className="text-brand-600" />
                 </div>
-                <h2 className="text-xl font-bold text-brand-900">Recuperar senha</h2>
+                <h2 className="text-xl font-bold text-brand-900">Nova senha</h2>
                 <p className="text-sm text-brand-400 mt-1">
-                  Informe seu e-mail e enviaremos um link de recuperação
+                  Escolha uma senha segura para sua conta
                 </p>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <Input
-                  id="email"
-                  label="E-mail"
-                  type="email"
-                  placeholder="seu@email.com"
-                  error={errors.email?.message}
-                  {...register('email')}
+                  id="password"
+                  label="Nova senha"
+                  type="password"
+                  placeholder="••••••••"
+                  error={errors.password?.message}
+                  {...register('password')}
+                />
+                <Input
+                  id="confirmPassword"
+                  label="Confirmar senha"
+                  type="password"
+                  placeholder="••••••••"
+                  error={errors.confirmPassword?.message}
+                  {...register('confirmPassword')}
                 />
                 <Button type="submit" disabled={isSubmitting} className="w-full">
-                  {isSubmitting ? 'Enviando...' : 'Enviar link de recuperação'}
+                  {isSubmitting ? 'Salvando...' : 'Redefinir senha'}
                 </Button>
                 <Link
                   href="/login"

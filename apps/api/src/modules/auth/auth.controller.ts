@@ -5,7 +5,7 @@ import { Throttle } from '@nestjs/throttler'
 import { AuthService } from './auth.service'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { User } from '@superpao/database'
-import { LoginDto, ForgotPasswordDto, ResetPasswordDto } from '@superpao/shared-types'
+import { LoginDto, ForgotPasswordDto, ResetPasswordDto, RefreshTokenDto } from './auth.dto'
 import type { Request } from 'express'
 
 @ApiTags('Auth')
@@ -32,8 +32,8 @@ export class AuthController {
   @Post('refresh')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
-  refresh(@Body('refreshToken') refreshToken: string) {
-    return this.authService.refreshTokens(refreshToken)
+  refresh(@Body() dto: RefreshTokenDto) {
+    return this.authService.refreshTokens(dto.refreshToken)
   }
 
   @Post('forgot-password')
