@@ -33,6 +33,9 @@ export class User {
   @Enum(() => UserStatus)
   status: UserStatus = UserStatus.ACTIVE
 
+  @Property({ nullable: true, type: 'text' })
+  avatarUrl?: string
+
   @Property({ nullable: true, hidden: true })
   refreshToken?: string
 

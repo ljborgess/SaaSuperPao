@@ -8,6 +8,7 @@ export interface UserDto {
   role: UserRole
   status: UserStatus
   createdAt: string
+  avatarUrl?: string
 }
 
 export interface CreateUserDto {

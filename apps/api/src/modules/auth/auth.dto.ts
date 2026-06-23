@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator'
+import { IsEmail, IsOptional, IsString, MinLength, MaxLength } from 'class-validator'
 
 export class LoginDto {
   @IsEmail({}, { message: 'E-mail inválido' })
@@ -27,4 +27,16 @@ export class ResetPasswordDto {
 export class RefreshTokenDto {
   @IsString()
   refreshToken!: string
+}
+
+export class UpdateProfileDto {
+  @IsString()
+  @MinLength(2, { message: 'Nome deve ter no mínimo 2 caracteres' })
+  @MaxLength(100)
+  name!: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500000, { message: 'Imagem muito grande' })
+  avatarUrl?: string
 }

@@ -1,11 +1,11 @@
-import { Controller, Post, Body, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common'
+import { Controller, Post, Patch, Body, UseGuards, Req, HttpCode, HttpStatus } from '@nestjs/common'
 import { ApiTags, ApiOperation } from '@nestjs/swagger'
 import { AuthGuard } from '@nestjs/passport'
 import { Throttle } from '@nestjs/throttler'
 import { AuthService } from './auth.service'
 import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { User } from '@superpao/database'
-import { LoginDto, ForgotPasswordDto, ResetPasswordDto, RefreshTokenDto } from './auth.dto'
+import { LoginDto, ForgotPasswordDto, ResetPasswordDto, RefreshTokenDto, UpdateProfileDto } from './auth.dto'
 import type { Request } from 'express'
 
 @ApiTags('Auth')
@@ -48,5 +48,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.token, dto.password)
+  }
+
+  @Patch('profile')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Atualizar perfil do usuário autenticado' })
+  updateProfile(@CurrentUser() user: User, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(user.id, dto.name, dto.avatarUrl)
   }
 }

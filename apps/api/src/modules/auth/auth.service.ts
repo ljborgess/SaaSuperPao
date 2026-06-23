@@ -71,7 +71,7 @@ export class AuthService {
     user.refreshToken = refreshToken
     await this.userRepo.getEntityManager().flush()
     await this.auditService.log({ userId: user.id, action: AuditAction.LOGIN, entity: 'auth', ip })
-    return { accessToken, refreshToken, user: { id: user.id, name: user.name, email: user.email, role: user.role } }
+    return { accessToken, refreshToken, user: { id: user.id, name: user.name, email: user.email, role: user.role, avatarUrl: user.avatarUrl } }
   }
 
   async logout(userId: string) {
@@ -107,6 +107,14 @@ export class AuthService {
     user.lockedUntil = undefined
     await this.userRepo.getEntityManager().flush()
     await this.auditService.log({ userId: user.id, action: AuditAction.PASSWORD_RESET, entity: 'auth' })
+  }
+
+  async updateProfile(userId: string, name: string, avatarUrl?: string) {
+    const user = await this.userRepo.findOneOrFail(userId)
+    user.name = name
+    if (avatarUrl !== undefined) user.avatarUrl = avatarUrl
+    await this.userRepo.getEntityManager().flush()
+    return { id: user.id, name: user.name, email: user.email, role: user.role, avatarUrl: user.avatarUrl }
   }
 
   async refreshTokens(refreshToken: string) {
