@@ -86,7 +86,3 @@ superpao/
     └── docker-compose.yml
 ```
 
-
-
-Email: admin@superpao.com.br
-Senha: Admin@123
