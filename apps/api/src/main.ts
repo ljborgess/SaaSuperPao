@@ -38,7 +38,7 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, config))
   }
 
-  const port = process.env.API_PORT ?? 3001
+  const port = process.env.PORT ?? process.env.API_PORT ?? 3001
   await app.listen(port)
   console.log(`SuperPão API running on http://localhost:${port}`)
 }
