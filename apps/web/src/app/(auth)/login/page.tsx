@@ -219,7 +219,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <DarkInput
                 id="email" label="E-mail" type="email"
-                placeholder="admin@superpao.com.br"
+                placeholder="seu@email.com"
                 error={errors.email?.message} icon={Mail}
                 {...register('email')}
               />
