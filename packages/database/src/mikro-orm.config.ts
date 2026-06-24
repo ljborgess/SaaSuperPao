@@ -29,6 +29,11 @@ export default defineConfig({
   user: requireEnv('DATABASE_USER', 'superpao'),
   password: requireEnv('DATABASE_PASSWORD', 'superpao'),
   dbName: requireEnv('DATABASE_NAME', 'superpao'),
+  ...(process.env.NODE_ENV === 'production' && {
+    driverOptions: {
+      connection: { ssl: { rejectUnauthorized: false } },
+    },
+  }),
   entities: [
     User,
     Client,
