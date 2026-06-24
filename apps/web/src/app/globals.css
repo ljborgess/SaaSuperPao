@@ -76,6 +76,10 @@
   animation-play-state: paused;
 }
 
+/* Hide scrollbar while keeping scroll functionality */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Grid background */
 .grid-bg {
   background-image:

@@ -27,7 +27,7 @@ export default defineConfig({
   host: requireEnv('DATABASE_HOST', 'localhost'),
   port: Number(requireEnv('DATABASE_PORT', '5432')),
   user: requireEnv('DATABASE_USER', 'superpao'),
-  password: requireEnv('DATABASE_PASSWORD'),
+  password: requireEnv('DATABASE_PASSWORD', 'superpao'),
   dbName: requireEnv('DATABASE_NAME', 'superpao'),
   entities: [
     User,

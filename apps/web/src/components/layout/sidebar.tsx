@@ -5,20 +5,8 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
-  LayoutDashboard,
-  Package,
-  Layers,
-  Warehouse,
-  ShoppingCart,
-  Truck,
-  Factory,
-  Users,
-  UserCircle,
-  LogOut,
-  Wheat,
-  Camera,
-  X,
-  ChevronUp,
+  LayoutDashboard, Package, Layers, Warehouse, ShoppingCart,
+  Truck, Factory, Users, UserCircle, LogOut, Wheat, Camera, X, ChevronUp,
 } from 'lucide-react'
 import { clearAuth, getStoredUser, storeAuth } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
@@ -95,13 +83,8 @@ export function Sidebar() {
   const fileRef = useRef<HTMLInputElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    setUser(getStoredUser())
-  }, [])
-
-  useEffect(() => {
-    if (user) setEditName(user.name)
-  }, [user])
+  useEffect(() => { setUser(getStoredUser()) }, [])
+  useEffect(() => { if (user) setEditName(user.name) }, [user])
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -161,18 +144,21 @@ export function Sidebar() {
   const avatar = user?.avatarUrl
 
   return (
-    <aside className="w-[260px] bg-brand-950 flex flex-col h-screen sticky top-0 shadow-sidebar shrink-0">
+    <aside
+      className="w-[260px] flex flex-col h-screen sticky top-0 shrink-0"
+      style={{ background: '#381B09', borderRight: '1px solid rgba(255,255,255,0.05)' }}
+    >
       {/* Logo */}
-      <div className="px-6 py-6 border-b border-white/[0.06]">
+      <div className="px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-lg shadow-brand-900/50">
-            <Wheat size={20} className="text-accent-cream" strokeWidth={2} />
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#C4A77D' }}>
+            <Wheat size={17} style={{ color: '#381B09' }} strokeWidth={2} />
           </div>
           <div>
-            <p className="font-display text-lg font-semibold text-accent-cream leading-none tracking-tight">
+            <p className="font-display text-base font-semibold leading-none tracking-tight" style={{ color: '#C4A77D' }}>
               SuperPão
             </p>
-            <p className="text-[10px] text-brand-400 mt-1 uppercase tracking-[0.15em] font-medium">
+            <p className="text-[10px] mt-0.5 uppercase tracking-[0.12em] font-medium" style={{ color: '#C4A77D' }}>
               Gestão Empresarial
             </p>
           </div>
@@ -180,10 +166,13 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-5 overflow-y-auto space-y-6">
+      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-5">
         {navGroups.map((group) => (
           <div key={group.label}>
-            <p className="px-3 mb-2 text-[10px] font-semibold text-brand-500 uppercase tracking-[0.12em]">
+            <p
+              className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+              style={{ color: 'rgba(196,167,125,0.45)' }}
+            >
               {group.label}
             </p>
             <div className="space-y-0.5">
@@ -194,23 +183,21 @@ export function Sidebar() {
                     key={href}
                     href={href}
                     className={cn(
-                      'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200',
+                      'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150',
                       active
-                        ? 'bg-brand-800/80 text-accent-cream shadow-sm'
-                        : 'text-brand-400 hover:bg-white/[0.04] hover:text-brand-200',
+                        ? 'bg-white/[0.07]'
+                        : 'hover:bg-white/[0.04]',
                     )}
+                    style={{ color: active ? '#C4A77D' : 'rgba(196,167,125,0.6)' }}
                   >
                     <Icon
-                      size={17}
+                      size={16}
                       strokeWidth={active ? 2 : 1.75}
-                      className={cn(
-                        'shrink-0 transition-colors',
-                        active ? 'text-accent-gold' : 'text-brand-500 group-hover:text-brand-300',
-                      )}
+                      style={{ color: active ? '#C4A77D' : 'rgba(196,167,125,0.45)', flexShrink: 0 }}
                     />
                     <span>{label}</span>
                     {active && (
-                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-accent-gold" />
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#C4A77D' }} />
                     )}
                   </Link>
                 )
@@ -221,75 +208,94 @@ export function Sidebar() {
       </nav>
 
       {/* User footer */}
-      <div className="px-3 py-4 border-t border-white/[0.06]">
+      <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         {user && (
           <div className="relative" ref={popoverRef}>
             {/* Profile popover */}
             {profileOpen && (
-              <div className="absolute bottom-full mb-2 left-0 right-0 bg-brand-900 border border-white/10 rounded-2xl shadow-2xl p-4 z-50">
-                {/* Header */}
+              <div
+                className="absolute bottom-full mb-2 left-0 right-0 rounded-2xl p-4 z-50"
+                style={{
+                  background: '#4A230E',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: '0 -12px 40px rgba(0,0,0,0.4)',
+                }}
+              >
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[11px] font-semibold text-brand-400 uppercase tracking-wider">Meu perfil</span>
-                  <button onClick={() => setProfileOpen(false)} className="text-brand-500 hover:text-brand-300 transition-colors">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(196,167,125,0.65)' }}>
+                    Meu perfil
+                  </span>
+                  <button onClick={() => setProfileOpen(false)} style={{ color: 'rgba(196,167,125,0.65)' }}>
                     <X size={14} />
                   </button>
                 </div>
 
-                {/* Avatar */}
                 <div className="flex flex-col items-center mb-4">
                   <div className="relative group">
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-brand-600 to-brand-700 flex items-center justify-center">
+                    <div
+                      className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center"
+                      style={{ background: 'rgba(196,167,125,0.15)' }}
+                    >
                       {avatar ? (
                         <img src={avatar} alt={user.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-xl font-bold text-accent-cream">
+                        <span className="text-xl font-bold font-display" style={{ color: '#C4A77D' }}>
                           {user.name.charAt(0).toUpperCase()}
                         </span>
                       )}
                     </div>
                     <button
                       onClick={() => fileRef.current?.click()}
-                      className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute inset-0 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ background: 'rgba(0,0,0,0.5)' }}
                     >
                       <Camera size={16} className="text-white" />
                     </button>
                   </div>
                   <button
                     onClick={() => fileRef.current?.click()}
-                    className="mt-2 text-[11px] text-brand-400 hover:text-accent-gold transition-colors"
+                    className="mt-2 text-[11px] hover:underline"
+                    style={{ color: 'rgba(196,167,125,0.65)' }}
                   >
                     Alterar foto
                   </button>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarChange}
-                  />
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </div>
 
-                {/* Info */}
                 <div className="space-y-1 mb-4 text-center">
-                  <p className="text-xs font-semibold text-brand-200">{user.email}</p>
-                  <span className="inline-block text-[10px] bg-brand-800 text-brand-300 px-2 py-0.5 rounded-full">
+                  <p className="text-xs font-semibold" style={{ color: '#C4A77D' }}>{user.email}</p>
+                  <span
+                    className="inline-block text-[10px] px-2 py-0.5 rounded-full"
+                    style={{ background: 'rgba(196,167,125,0.12)', color: '#C4A77D' }}
+                  >
                     {ROLE_LABEL[user.role] ?? user.role}
                   </span>
                 </div>
 
-                {/* Edit name */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-semibold text-brand-500 uppercase tracking-wider">Nome</label>
+                  <label className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(196,167,125,0.55)' }}>Nome</label>
                   <input
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
-                    className="w-full bg-brand-800/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-brand-200 placeholder:text-brand-600 focus:outline-none focus:border-accent-gold/40 transition-colors"
+                    className="w-full rounded-xl px-3 py-2 text-xs focus:outline-none"
+                    style={{
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.10)',
+                      color: '#FAF8F3',
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(196,167,125,0.4)' }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.10)' }}
                   />
                   <button
                     onClick={handleSaveName}
                     disabled={saving}
-                    className="w-full py-2 bg-accent-gold/10 hover:bg-accent-gold/20 border border-accent-gold/20 text-accent-gold text-xs font-semibold rounded-xl transition-colors disabled:opacity-50"
+                    className="w-full py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
+                    style={{
+                      background: 'rgba(196,167,125,0.12)',
+                      border: '1px solid rgba(196,167,125,0.2)',
+                      color: '#C4A77D',
+                    }}
                   >
                     {saving ? 'Salvando...' : 'Salvar'}
                   </button>
@@ -300,9 +306,15 @@ export function Sidebar() {
             {/* Clickable user section */}
             <button
               onClick={() => setProfileOpen((v) => !v)}
-              className="flex items-center gap-3 px-3 py-2.5 mb-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] w-full text-left transition-colors group"
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 mb-1.5 rounded-xl w-full text-left transition-colors',
+                profileOpen ? 'bg-white/[0.06]' : 'hover:bg-white/[0.04]',
+              )}
             >
-              <div className="w-8 h-8 rounded-lg overflow-hidden bg-gradient-to-br from-brand-600 to-brand-700 flex items-center justify-center text-xs font-bold text-accent-cream shrink-0">
+              <div
+                className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center text-xs font-bold shrink-0"
+                style={{ background: 'rgba(196,167,125,0.18)', color: '#C4A77D' }}
+              >
                 {avatar ? (
                   <img src={avatar} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
@@ -310,24 +322,24 @@ export function Sidebar() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-brand-200 truncate">{user.name}</p>
-                <p className="text-[10px] text-brand-500 truncate">{user.email}</p>
+                <p className="text-xs font-semibold truncate" style={{ color: '#C4A77D' }}>{user.name}</p>
+                <p className="text-[10px] truncate" style={{ color: 'rgba(196,167,125,0.65)' }}>{user.email}</p>
               </div>
               <ChevronUp
                 size={13}
-                className={cn(
-                  'text-brand-600 shrink-0 transition-transform duration-200',
-                  profileOpen ? 'rotate-0' : 'rotate-180',
-                )}
+                className={cn('shrink-0 transition-transform duration-200', profileOpen ? 'rotate-0' : 'rotate-180')}
+                style={{ color: 'rgba(196,167,125,0.5)' }}
               />
             </button>
           </div>
         )}
+
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-[13px] font-medium text-brand-500 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-[13px] font-medium transition-all duration-200 hover:bg-red-500/10 hover:text-red-400"
+          style={{ color: 'rgba(196,167,125,0.55)' }}
         >
-          <LogOut size={16} strokeWidth={1.75} />
+          <LogOut size={15} strokeWidth={1.75} />
           Sair da conta
         </button>
       </div>
