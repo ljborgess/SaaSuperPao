@@ -4,10 +4,131 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { PageHeader } from '@/components/layout/page-header'
-import { ShoppingCart, Plus, Trash2, CheckCircle2, Pencil } from 'lucide-react'
+import { ShoppingCart, Plus, Trash2, CheckCircle2, Pencil, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrency } from '@superpao/shared-utils'
 import type { PurchaseDto, SupplierDto, IngredientDto, PaginatedResponse } from '@superpao/shared-types'
+import type { jsPDF as JsPDFType } from 'jspdf'
+
+async function downloadComprovante(p: PurchaseDto) {
+  const { jsPDF } = await import('jspdf') as { jsPDF: typeof JsPDFType }
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+  const W = 210
+  const margin = 20
+  let y = 20
+
+  // Header
+  doc.setFillColor(56, 27, 9)
+  doc.rect(0, 0, W, 28, 'F')
+  doc.setTextColor(196, 167, 125)
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text('SuperPão', margin, 16)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Comprovante de Entrada de Mercadoria', margin, 23)
+  y = 40
+
+  // Título e número
+  doc.setTextColor(40, 20, 5)
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Comprovante de Compra', margin, y)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(120, 90, 60)
+  if (p.invoiceNumber) doc.text(`NF: ${p.invoiceNumber}`, W - margin, y, { align: 'right' })
+  y += 8
+
+  doc.setDrawColor(196, 167, 125)
+  doc.setLineWidth(0.4)
+  doc.line(margin, y, W - margin, y)
+  y += 8
+
+  // Fornecedor
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(56, 27, 9)
+  doc.text('Fornecedor', margin, y)
+  y += 6
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(40, 20, 5)
+  doc.text(p.supplier?.razaoSocial ?? '—', margin, y)
+  y += 5
+  doc.setTextColor(120, 90, 60)
+  doc.text(`Data da compra: ${new Date(p.purchaseDate).toLocaleDateString('pt-BR')}`, margin, y)
+  y += 10
+
+  doc.line(margin, y, W - margin, y)
+  y += 8
+
+  // Itens
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(56, 27, 9)
+  doc.text('Itens da Compra', margin, y)
+  y += 6
+
+  // Cabeçalho da tabela
+  doc.setFillColor(245, 240, 230)
+  doc.rect(margin, y - 4, W - margin * 2, 7, 'F')
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(120, 90, 60)
+  doc.text('Ingrediente', margin + 2, y)
+  doc.text('Unid.', margin + 80, y)
+  doc.text('Qtd.', margin + 100, y)
+  doc.text('Preço Unit.', margin + 118, y)
+  doc.text('Total', W - margin - 2, y, { align: 'right' })
+  y += 6
+
+  // Linhas dos itens
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(40, 20, 5)
+  for (const item of p.items ?? []) {
+    doc.text(item.ingredient?.name ?? '—', margin + 2, y)
+    doc.text(item.ingredient?.unit ?? '—', margin + 80, y)
+    doc.text(String(item.quantity), margin + 100, y)
+    doc.text(formatCurrency(item.unitPrice), margin + 118, y)
+    doc.text(formatCurrency(item.totalPrice), W - margin - 2, y, { align: 'right' })
+    y += 6
+    if (y > 260) {
+      doc.addPage()
+      y = 20
+    }
+  }
+
+  y += 2
+  doc.line(margin, y, W - margin, y)
+  y += 8
+
+  // Total
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(56, 27, 9)
+  doc.text('Total Geral', margin, y)
+  doc.setTextColor(40, 100, 60)
+  doc.text(formatCurrency(p.totalValue), W - margin, y, { align: 'right' })
+  y += 12
+
+  // Status
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(120, 90, 60)
+  doc.text(`Status: ${p.status === 'RECEIVED' ? 'Recebida ✓' : p.status}`, margin, y)
+  y += 10
+
+  // Footer
+  doc.setFillColor(245, 240, 230)
+  doc.rect(margin, y, W - margin * 2, 10, 'F')
+  doc.setFontSize(7.5)
+  doc.setTextColor(120, 90, 60)
+  doc.text('Documento gerado pelo sistema SuperPão — uso interno', W / 2, y + 6, { align: 'center' })
+
+  doc.save(`compra-${p.invoiceNumber ?? p.id.slice(0, 8)}.pdf`)
+}
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -302,6 +423,17 @@ export default function ComprasPage() {
                                   Receber
                                 </Button>
                               </>
+                            )}
+                            {p.status === 'RECEIVED' && (
+                              <Button
+                                variant="icon"
+                                size="icon"
+                                onClick={() => downloadComprovante(p)}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-emerald-600 hover:bg-emerald-50"
+                                aria-label="Baixar comprovante"
+                              >
+                                <Download size={14} />
+                              </Button>
                             )}
                           </div>
                         </td>
