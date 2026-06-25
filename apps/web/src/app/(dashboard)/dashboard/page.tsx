@@ -66,7 +66,7 @@ function PurchaseChart({ data }: { data: DashboardTrends['monthlyPurchases'] }) 
 
   return (
     <div className="px-5 pb-5">
-      <div className="flex items-end gap-2 h-36">
+      <div className="flex gap-2 h-36">
         {data.map((d, i) => {
           const pct = (d.value / max) * 100
           const isCurrent = i === data.length - 1
