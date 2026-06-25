@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import {
   Wheat, LayoutDashboard, Package, Layers, Warehouse, ShoppingCart,
   Factory, Truck, UserCircle, Users, CalendarDays, ChevronDown,
-  LogOut, Camera, X, Bell, Menu, FileText,
+  LogOut, Camera, X, Bell, Menu,
 } from 'lucide-react'
 import { clearAuth, getStoredUser, storeAuth } from '@/lib/auth'
 import { api } from '@/lib/api'
@@ -21,7 +21,6 @@ const NAV_ITEMS = [
   { href: '/estoque',      label: 'Estoque',      icon: Warehouse },
   { href: '/compras',      label: 'Compras',      icon: ShoppingCart },
   { href: '/producao',      label: 'Produção',      icon: Factory },
-  { href: '/notas-fiscais', label: 'NF Serviço', icon: FileText },
   { href: '/fornecedores',  label: 'Fornecedores',  icon: Truck },
   { href: '/clientes',     label: 'Clientes',     icon: UserCircle },
   { href: '/usuarios',     label: 'Usuários',     icon: Users },

@@ -18,7 +18,6 @@ import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { EmailModule } from './modules/email/email.module'
 import { AuditModule } from './modules/audit/audit.module'
 import { RecipesModule } from './modules/recipes/recipes.module'
-import { NotaFiscalModule } from './modules/nota-fiscal/nota-fiscal.module'
 
 @Module({
   imports: [
@@ -49,7 +48,6 @@ import { NotaFiscalModule } from './modules/nota-fiscal/nota-fiscal.module'
     EmailModule,
     AuditModule,
     RecipesModule,
-    NotaFiscalModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

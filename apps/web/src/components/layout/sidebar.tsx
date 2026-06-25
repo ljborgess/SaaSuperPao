@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, Package, Layers, Warehouse, ShoppingCart,
-  Truck, Factory, Users, UserCircle, LogOut, Wheat, Camera, X, ChevronUp, FileText,
+  Truck, Factory, Users, UserCircle, LogOut, Wheat, Camera, X, ChevronUp,
 } from 'lucide-react'
 import { clearAuth, getStoredUser, storeAuth } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
@@ -31,7 +31,6 @@ const navGroups = [
       { href: '/estoque', label: 'Estoque', icon: Warehouse },
       { href: '/compras', label: 'Compras', icon: ShoppingCart },
       { href: '/producao', label: 'Produção', icon: Factory },
-      { href: '/notas-fiscais', label: 'Notas Fiscais', icon: FileText },
     ],
   },
   {
