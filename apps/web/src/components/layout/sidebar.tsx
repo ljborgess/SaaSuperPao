@@ -122,8 +122,8 @@ export function Sidebar() {
       const stored = getStoredUser()
       if (stored) {
         const newUser = { ...stored, name: updated.name, avatarUrl: updated.avatarUrl }
-        const accessToken = sessionStorage.getItem('accessToken') ?? ''
-        const refreshToken = sessionStorage.getItem('refreshToken') ?? ''
+        const accessToken = localStorage.getItem('accessToken') ?? ''
+        const refreshToken = localStorage.getItem('refreshToken') ?? ''
         storeAuth(accessToken, refreshToken, newUser)
         setUser(newUser)
       }
