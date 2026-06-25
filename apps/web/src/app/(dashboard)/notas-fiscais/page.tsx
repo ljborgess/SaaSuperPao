@@ -18,7 +18,8 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Pagination } from '@/components/ui/pagination'
 import { cn } from '@/lib/utils'
 
-const STATUS_STYLES: Record<string, { label: string; variant: 'warning' | 'success' | 'neutral' | 'danger' }> = {
+type BadgeVariant = 'warning' | 'success' | 'neutral' | 'danger'
+const STATUS_STYLES: Record<string, { label: string; variant: BadgeVariant }> = {
   PENDING:   { label: 'Pendente',  variant: 'warning' },
   ISSUED:    { label: 'Emitida',   variant: 'success' },
   CANCELLED: { label: 'Cancelada', variant: 'neutral' },
@@ -243,7 +244,7 @@ export default function NotasFiscaisPage() {
           <div className="flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => { setShowCancel(null); setMotivo('') }}>Voltar</Button>
             <Button
-              variant="destructive"
+              variant="danger"
               disabled={!motivo.trim() || cancelarMutation.isPending}
               onClick={() => showCancel && cancelarMutation.mutate({ id: showCancel.id, motivo })}
             >
@@ -309,7 +310,7 @@ export default function NotasFiscaisPage() {
                           {formatCurrency(n.value)}
                         </td>
                         <td className="table-cell text-center">
-                          <Badge variant={style.variant as any}>{style.label}</Badge>
+                          <Badge variant={style.variant}>{style.label}</Badge>
                         </td>
                         <td className="table-cell text-right text-xs text-brand-500">
                           {n.issuedAt
