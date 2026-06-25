@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { PageHeader } from '@/components/layout/page-header'
-import { FileText, Plus, XCircle } from 'lucide-react'
+import { FileText, Plus, XCircle, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrency } from '@superpao/shared-utils'
+import type { jsPDF as JsPDFType } from 'jspdf'
 import type { NotaFiscalDto, ClientDto, PaginatedResponse } from '@superpao/shared-types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -17,6 +18,119 @@ import { LoadingState } from '@/components/ui/loading-state'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Pagination } from '@/components/ui/pagination'
 import { cn } from '@/lib/utils'
+
+async function downloadNotaPDF(n: NotaFiscalDto) {
+  const { jsPDF } = await import('jspdf') as { jsPDF: typeof JsPDFType }
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+  const W = 210
+  const margin = 20
+  let y = 20
+
+  // Header
+  doc.setFillColor(56, 27, 9)
+  doc.rect(0, 0, W, 28, 'F')
+  doc.setTextColor(196, 167, 125)
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text('SuperPão', margin, 16)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Nota Fiscal de Serviço — NFS-e', margin, 23)
+  y = 40
+
+  // Número e status
+  doc.setTextColor(40, 20, 5)
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.text(`NFS-e ${n.nfseNumber ? `Nº ${n.nfseNumber}` : '(em processamento)'}`, margin, y)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(120, 90, 60)
+  doc.text(`Status: ${n.status === 'ISSUED' ? 'Emitida' : n.status === 'PENDING' ? 'Pendente' : n.status === 'CANCELLED' ? 'Cancelada' : 'Erro'}`, W - margin, y, { align: 'right' })
+  y += 8
+
+  doc.setDrawColor(196, 167, 125)
+  doc.setLineWidth(0.4)
+  doc.line(margin, y, W - margin, y)
+  y += 8
+
+  // Seção Tomador
+  const field = (label: string, value: string | undefined, xLabel: number, xValue: number, yy: number) => {
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(120, 90, 60)
+    doc.text(label, xLabel, yy)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(40, 20, 5)
+    doc.text(value || '—', xValue, yy)
+  }
+
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(56, 27, 9)
+  doc.text('Tomador do Serviço', margin, y)
+  y += 6
+
+  field('Nome:', n.clientName, margin, margin + 22, y); y += 6
+  if (n.clientCpfCnpj) { field('CPF/CNPJ:', n.clientCpfCnpj, margin, margin + 22, y); y += 6 }
+  if (n.clientEmail) { field('E-mail:', n.clientEmail, margin, margin + 22, y); y += 6 }
+  y += 4
+
+  doc.line(margin, y, W - margin, y)
+  y += 8
+
+  // Seção Serviço
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(56, 27, 9)
+  doc.text('Serviço Prestado', margin, y)
+  y += 6
+
+  field('Descrição:', '', margin, margin, y); y += 5
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(40, 20, 5)
+  doc.setFontSize(9)
+  const lines = doc.splitTextToSize(n.serviceDescription, W - margin * 2) as string[]
+  doc.text(lines, margin, y)
+  y += lines.length * 5 + 2
+
+  if (n.serviceCode) { field('Código do serviço:', n.serviceCode, margin, margin + 36, y); y += 6 }
+  y += 2
+
+  doc.line(margin, y, W - margin, y)
+  y += 8
+
+  // Valor
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(56, 27, 9)
+  doc.text('Valor Total', margin, y)
+  doc.setTextColor(40, 120, 60)
+  doc.text(formatCurrency(n.value), W - margin, y, { align: 'right' })
+  y += 10
+
+  doc.line(margin, y, W - margin, y)
+  y += 8
+
+  // Datas
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(120, 90, 60)
+  const emissao = n.issuedAt ? new Date(n.issuedAt).toLocaleDateString('pt-BR') : new Date(n.createdAt).toLocaleDateString('pt-BR')
+  doc.text(`Data de emissão: ${emissao}`, margin, y)
+  if (n.externalId) { doc.text(`ID externo: ${n.externalId}`, W - margin, y, { align: 'right' }) }
+  y += 10
+
+  // Footer
+  doc.setFillColor(245, 240, 230)
+  doc.rect(margin, y, W - margin * 2, 10, 'F')
+  doc.setFontSize(7.5)
+  doc.setTextColor(120, 90, 60)
+  doc.text('Documento gerado pelo sistema SuperPão — uso interno', W / 2, y + 6, { align: 'center' })
+
+  doc.save(`nfse-${n.nfseNumber ?? n.id.slice(0, 8)}.pdf`)
+}
 
 type BadgeVariant = 'warning' | 'success' | 'neutral' | 'danger'
 const STATUS_STYLES: Record<string, { label: string; variant: BadgeVariant }> = {
@@ -318,8 +432,17 @@ export default function NotasFiscaisPage() {
                             : new Date(n.createdAt).toLocaleDateString('pt-BR')}
                         </td>
                         <td className="table-cell">
-                          {n.status === 'ISSUED' && (
-                            <div className="flex justify-end">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="icon"
+                              size="icon"
+                              onClick={() => downloadNotaPDF(n)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity hover:text-emerald-600 hover:bg-emerald-50"
+                              aria-label="Baixar PDF"
+                            >
+                              <Download size={14} />
+                            </Button>
+                            {n.status === 'ISSUED' && (
                               <Button
                                 variant="icon"
                                 size="icon"
@@ -329,8 +452,8 @@ export default function NotasFiscaisPage() {
                               >
                                 <XCircle size={14} />
                               </Button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </td>
                       </tr>
                     )
