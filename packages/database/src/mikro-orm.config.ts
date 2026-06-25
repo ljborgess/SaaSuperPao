@@ -16,6 +16,7 @@ import { ProductionOrder } from './entities/production-order.entity'
 import { ProductionOrderItem } from './entities/production-order-item.entity'
 import { EmailLog } from './entities/email-log.entity'
 import { AuditLog } from './entities/audit-log.entity'
+import { NotaFiscal } from './entities/nota-fiscal.entity'
 
 const requireEnv = (key: string, fallback?: string): string => {
   const val = process.env[key] ?? fallback
@@ -50,6 +51,7 @@ export default defineConfig({
     ProductionOrderItem,
     EmailLog,
     AuditLog,
+    NotaFiscal,
   ],
   extensions: [Migrator, SeedManager],
   migrations: {
