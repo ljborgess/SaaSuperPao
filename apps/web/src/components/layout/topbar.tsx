@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { href: '/estoque',      label: 'Estoque',      icon: Warehouse },
   { href: '/compras',      label: 'Compras',      icon: ShoppingCart },
   { href: '/producao',      label: 'Produção',      icon: Factory },
-  { href: '/notas-fiscais', label: 'Notas Fiscais', icon: FileText },
+  { href: '/notas-fiscais', label: 'NF Serviço', icon: FileText },
   { href: '/fornecedores',  label: 'Fornecedores',  icon: Truck },
   { href: '/clientes',     label: 'Clientes',     icon: UserCircle },
   { href: '/usuarios',     label: 'Usuários',     icon: Users },
@@ -154,7 +154,7 @@ export function Topbar() {
         </div>
 
         {/* Nav — desktop only */}
-        <nav className="hidden md:flex items-center justify-center gap-0.5 flex-1 overflow-x-auto px-4 scrollbar-hide">
+        <nav className="hidden md:flex items-center justify-start gap-0.5 flex-1 overflow-x-auto px-4 scrollbar-hide">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = isActive(pathname, href)
             return (
