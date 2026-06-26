@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, Enum, ManyToOne, OneToMany, Collection } from '@mikro-orm/core'
+import { Entity, Filter, PrimaryKey, Property, Enum, ManyToOne, OneToMany, Collection } from '@mikro-orm/core'
 import { v4 as uuid } from 'uuid'
 import { Supplier } from './supplier.entity'
 import { RecipeItem } from './recipe-item.entity'
@@ -15,6 +15,7 @@ export enum IngredientUnit {
   CX = 'CX',
 }
 
+@Filter({ name: 'notDeleted', cond: { deletedAt: null }, default: true })
 @Entity({ tableName: 'ingredients' })
 export class Ingredient {
   @PrimaryKey({ type: 'uuid' })
@@ -49,6 +50,9 @@ export class Ingredient {
 
   @OneToMany(() => StockMovement, (sm) => sm.ingredient)
   stockMovements = new Collection<StockMovement>(this)
+
+  @Property({ nullable: true })
+  deletedAt?: Date
 
   @Property()
   createdAt: Date = new Date()

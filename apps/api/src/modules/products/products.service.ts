@@ -80,6 +80,7 @@ export class ProductsService {
 
   async remove(id: string): Promise<void> {
     const product = await this.findOne(id)
-    await this.repo.getEntityManager().removeAndFlush(product)
+    product.deletedAt = new Date()
+    await this.repo.getEntityManager().flush()
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@mikro-orm/nestjs'
-import { EntityRepository } from '@mikro-orm/core'
+import { EntityRepository, LockMode } from '@mikro-orm/core'
 import {
   ProductionOrder,
   ProductionOrderItem,
@@ -165,56 +165,69 @@ export class ProductionService {
     if (!createdBy) throw new NotFoundException('Usuário não encontrado.')
 
     const em = this.orderRepo.getEntityManager()
-    order.status = ProductionStatus.COMPLETED
-    order.completedAt = new Date()
 
-    const movements: StockMovement[] = []
+    return await em.transactional(async () => {
+      await em.lock(order, LockMode.PESSIMISTIC_WRITE)
 
-    for (const item of order.items) {
-      const ingredient = item.ingredient
-      const previousStock = Number(ingredient.currentStock)
-      const consumed = Number(order.mode === ProductionMode.MANUAL ? item.consumedQty! : item.requiredQty)
-      const newStock = previousStock - consumed
-
-      if (newStock < 0) {
-        throw new BadRequestException(`Estoque insuficiente para ingrediente: ${ingredient.name}`)
+      if (order.status !== ProductionStatus.IN_PROGRESS && order.status !== ProductionStatus.PENDING) {
+        throw new BadRequestException('Ordem já foi processada por outro usuário.')
       }
 
-      ingredient.currentStock = newStock
-      const movement = this.movementRepo.create({
-        type: MovementType.OUT,
-        quantity: consumed,
-        previousStock,
-        newStock,
+      order.status = ProductionStatus.COMPLETED
+      order.completedAt = new Date()
+
+      const movements: StockMovement[] = []
+
+      for (const item of order.items) {
+        const ingredient = item.ingredient
+        await em.lock(ingredient, LockMode.PESSIMISTIC_WRITE)
+
+        const previousStock = Number(ingredient.currentStock)
+        const consumed = Number(order.mode === ProductionMode.MANUAL ? item.consumedQty! : item.requiredQty)
+        const newStock = previousStock - consumed
+
+        if (newStock < 0) {
+          throw new BadRequestException(`Estoque insuficiente para ingrediente: ${ingredient.name}`)
+        }
+
+        ingredient.currentStock = newStock
+        const movement = this.movementRepo.create({
+          type: MovementType.OUT,
+          quantity: consumed,
+          previousStock,
+          newStock,
+          reason: MovementReason.PRODUCTION,
+          ingredient,
+          createdBy,
+          referenceId: order.id,
+          referenceType: 'PRODUCTION',
+        } as any)
+        movements.push(movement)
+      }
+
+      const product = order.product
+      await em.lock(product, LockMode.PESSIMISTIC_WRITE)
+
+      const prevProductStock = Number(product.currentStock)
+      const newProductStock = prevProductStock + Number(order.quantity)
+      product.currentStock = newProductStock
+
+      const productMovement = this.movementRepo.create({
+        type: MovementType.IN,
+        quantity: Number(order.quantity),
+        previousStock: prevProductStock,
+        newStock: newProductStock,
         reason: MovementReason.PRODUCTION,
-        ingredient,
+        product,
         createdBy,
         referenceId: order.id,
         referenceType: 'PRODUCTION',
       } as any)
-      movements.push(movement)
-    }
+      movements.push(productMovement)
 
-    const product = order.product
-    const prevProductStock = Number(product.currentStock)
-    const newProductStock = prevProductStock + Number(order.quantity)
-    product.currentStock = newProductStock
-
-    const productMovement = this.movementRepo.create({
-      type: MovementType.IN,
-      quantity: Number(order.quantity),
-      previousStock: prevProductStock,
-      newStock: newProductStock,
-      reason: MovementReason.PRODUCTION,
-      product,
-      createdBy,
-      referenceId: order.id,
-      referenceType: 'PRODUCTION',
-    } as any)
-    movements.push(productMovement)
-
-    await em.persistAndFlush([order, product, ...movements])
-    return order
+      em.persist([order, product, ...movements])
+      return order
+    })
   }
 
   async cancel(id: string): Promise<ProductionOrder> {

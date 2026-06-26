@@ -1,6 +1,7 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core'
+import { Entity, Filter, PrimaryKey, Property } from '@mikro-orm/core'
 import { v4 as uuid } from 'uuid'
 
+@Filter({ name: 'notDeleted', cond: { deletedAt: null }, default: true })
 @Entity({ tableName: 'clients' })
 export class Client {
   @PrimaryKey({ type: 'uuid' })
@@ -26,6 +27,9 @@ export class Client {
 
   @Property()
   active: boolean = true
+
+  @Property({ nullable: true })
+  deletedAt?: Date
 
   @Property()
   createdAt: Date = new Date()

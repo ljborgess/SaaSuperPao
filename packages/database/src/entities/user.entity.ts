@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, Enum, BeforeCreate, BeforeUpdate } from '@mikro-orm/core'
+import { Entity, Filter, PrimaryKey, Property, Enum, BeforeCreate, BeforeUpdate } from '@mikro-orm/core'
 import { v4 as uuid } from 'uuid'
 import * as bcrypt from 'bcrypt'
 
@@ -13,6 +13,7 @@ export enum UserStatus {
   INACTIVE = 'INACTIVE',
 }
 
+@Filter({ name: 'notDeleted', cond: { deletedAt: null }, default: true })
 @Entity({ tableName: 'users' })
 export class User {
   @PrimaryKey({ type: 'uuid' })
@@ -50,6 +51,9 @@ export class User {
 
   @Property({ nullable: true, hidden: true })
   lockedUntil?: Date
+
+  @Property({ nullable: true })
+  deletedAt?: Date
 
   @Property()
   createdAt: Date = new Date()

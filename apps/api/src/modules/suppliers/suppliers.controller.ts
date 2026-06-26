@@ -5,7 +5,9 @@ import { RolesGuard } from '../../common/guards/roles.guard'
 import { Roles } from '../../common/decorators/roles.decorator'
 import { UserRole } from '@superpao/database'
 import { SuppliersService } from './suppliers.service'
-import type { CreateSupplierDto, UpdateSupplierDto, PaginationQuery } from '@superpao/shared-types'
+import { CreateSupplierDto } from './dto/create-supplier.dto'
+import { UpdateSupplierDto } from './dto/update-supplier.dto'
+import type { PaginationQuery } from '@superpao/shared-types'
 
 @ApiTags('Suppliers')
 @ApiBearerAuth()

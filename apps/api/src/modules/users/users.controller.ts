@@ -3,9 +3,12 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard'
 import { RolesGuard } from '../../common/guards/roles.guard'
 import { Roles } from '../../common/decorators/roles.decorator'
-import { UserRole } from '@superpao/database'
+import { CurrentUser } from '../../common/decorators/current-user.decorator'
+import { UserRole, User } from '@superpao/database'
 import { UsersService } from './users.service'
-import type { CreateUserDto, UpdateUserDto, PaginationQuery } from '@superpao/shared-types'
+import { CreateUserDto } from './dto/create-user.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
+import type { PaginationQuery } from '@superpao/shared-types'
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -34,8 +37,8 @@ export class UsersController {
 
   @Patch(':id')
   @Roles(UserRole.ADMIN)
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.service.update(id, dto)
+  update(@Param('id') id: string, @Body() dto: UpdateUserDto, @CurrentUser() currentUser: User) {
+    return this.service.update(id, dto, currentUser.id)
   }
 
   @Delete(':id')

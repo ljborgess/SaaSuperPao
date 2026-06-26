@@ -38,6 +38,7 @@ export class ClientsService {
 
   async remove(id: string): Promise<void> {
     const client = await this.findOne(id)
-    await this.repo.getEntityManager().removeAndFlush(client)
+    client.deletedAt = new Date()
+    await this.repo.getEntityManager().flush()
   }
 }

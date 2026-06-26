@@ -42,6 +42,7 @@ export class SuppliersService {
 
   async remove(id: string): Promise<void> {
     const supplier = await this.findOne(id)
-    await this.repo.getEntityManager().removeAndFlush(supplier)
+    supplier.deletedAt = new Date()
+    await this.repo.getEntityManager().flush()
   }
 }

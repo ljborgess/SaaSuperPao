@@ -1,13 +1,17 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@mikro-orm/nestjs'
 import { EntityRepository } from '@mikro-orm/core'
-import { User } from '@superpao/database'
-import type { CreateUserDto, UpdateUserDto, PaginationQuery } from '@superpao/shared-types'
+import { User, AuditAction } from '@superpao/database'
 import { parsePagination, buildPaginatedResponse } from '@superpao/shared-utils'
+import { AuditService } from '../audit/audit.service'
+import type { CreateUserDto, UpdateUserDto, PaginationQuery } from '@superpao/shared-types'
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private readonly repo: EntityRepository<User>) {}
+  constructor(
+    @InjectRepository(User) private readonly repo: EntityRepository<User>,
+    private readonly auditService: AuditService,
+  ) {}
 
   async findAll(query: PaginationQuery) {
     const { page, limit, offset } = parsePagination(query)
@@ -36,7 +40,7 @@ export class UsersService {
     return user
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<User> {
+  async update(id: string, dto: UpdateUserDto, requesterId?: string): Promise<User> {
     const user = await this.findOne(id)
     if (dto.email && dto.email !== user.email) {
       const conflict = await this.repo.findOne({ email: dto.email })
@@ -45,13 +49,31 @@ export class UsersService {
     }
     if (dto.name !== undefined) user.name = dto.name
     if (dto.role !== undefined) user.role = dto.role as any
-    if ((dto as any).password !== undefined) user.password = (dto as any).password
+    if (dto.status !== undefined) user.status = dto.status as any
+
+    const passwordChanged = (dto as any).password !== undefined
+    if (passwordChanged) {
+      user.password = (dto as any).password
+    }
+
     await this.repo.getEntityManager().flush()
+
+    if (passwordChanged && requesterId) {
+      await this.auditService.log({
+        userId: requesterId,
+        action: AuditAction.PASSWORD_CHANGE,
+        entity: 'users',
+        entityId: id,
+        payload: { targetUserId: id },
+      })
+    }
+
     return user
   }
 
   async remove(id: string): Promise<void> {
     const user = await this.findOne(id)
-    await this.repo.getEntityManager().removeAndFlush(user)
+    user.deletedAt = new Date()
+    await this.repo.getEntityManager().flush()
   }
 }

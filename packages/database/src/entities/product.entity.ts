@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, Enum, ManyToOne } from '@mikro-orm/core'
+import { Entity, Filter, PrimaryKey, Property, Enum, ManyToOne } from '@mikro-orm/core'
 import { v4 as uuid } from 'uuid'
 import { Category } from './category.entity'
 
@@ -17,6 +17,7 @@ export enum ProductUnit {
   PCT = 'PCT',
 }
 
+@Filter({ name: 'notDeleted', cond: { deletedAt: null }, default: true })
 @Entity({ tableName: 'products' })
 export class Product {
   @PrimaryKey({ type: 'uuid' })
@@ -51,6 +52,9 @@ export class Product {
 
   @Enum(() => ProductStatus)
   status: ProductStatus = ProductStatus.ACTIVE
+
+  @Property({ nullable: true })
+  deletedAt?: Date
 
   @Property()
   createdAt: Date = new Date()

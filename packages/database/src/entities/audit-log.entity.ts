@@ -11,6 +11,7 @@ export enum AuditAction {
   DELETE = 'DELETE',
   STOCK_MOVEMENT = 'STOCK_MOVEMENT',
   PASSWORD_RESET = 'PASSWORD_RESET',
+  PASSWORD_CHANGE = 'PASSWORD_CHANGE',
 }
 
 @Entity({ tableName: 'audit_logs' })

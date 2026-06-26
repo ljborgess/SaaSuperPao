@@ -47,7 +47,8 @@ export class InventoryService {
 
   async removeIngredient(id: string): Promise<void> {
     const ingredient = await this.findOneIngredient(id)
-    await this.ingredientRepo.getEntityManager().removeAndFlush(ingredient)
+    ingredient.deletedAt = new Date()
+    await this.ingredientRepo.getEntityManager().flush()
   }
 
   async findAllMovements(query: PaginationQuery) {

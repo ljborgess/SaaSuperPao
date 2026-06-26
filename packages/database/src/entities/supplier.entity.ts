@@ -1,8 +1,9 @@
-import { Entity, PrimaryKey, Property, OneToMany, Collection } from '@mikro-orm/core'
+import { Entity, Filter, PrimaryKey, Property, OneToMany, Collection } from '@mikro-orm/core'
 import { v4 as uuid } from 'uuid'
 import { Purchase } from './purchase.entity'
 import { Ingredient } from './ingredient.entity'
 
+@Filter({ name: 'notDeleted', cond: { deletedAt: null }, default: true })
 @Entity({ tableName: 'suppliers' })
 export class Supplier {
   @PrimaryKey({ type: 'uuid' })
@@ -37,6 +38,9 @@ export class Supplier {
 
   @OneToMany(() => Ingredient, (i) => i.supplier)
   ingredients = new Collection<Ingredient>(this)
+
+  @Property({ nullable: true })
+  deletedAt?: Date
 
   @Property()
   createdAt: Date = new Date()

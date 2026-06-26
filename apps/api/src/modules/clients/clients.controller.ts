@@ -5,7 +5,9 @@ import { RolesGuard } from '../../common/guards/roles.guard'
 import { Roles } from '../../common/decorators/roles.decorator'
 import { UserRole } from '@superpao/database'
 import { ClientsService } from './clients.service'
-import type { CreateClientDto, UpdateClientDto, PaginationQuery } from '@superpao/shared-types'
+import { CreateClientDto } from './dto/create-client.dto'
+import { UpdateClientDto } from './dto/update-client.dto'
+import type { PaginationQuery } from '@superpao/shared-types'
 
 @ApiTags('Clients')
 @ApiBearerAuth()
