@@ -34,7 +34,8 @@ export class AuthService {
     if (!user || !isValid) {
       if (user) {
         user.loginAttempts = (user.loginAttempts ?? 0) + 1
-        if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+        const justLocked = user.loginAttempts >= MAX_LOGIN_ATTEMPTS
+        if (justLocked) {
           user.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS)
         }
         await this.userRepo.getEntityManager().flush()
@@ -42,8 +43,13 @@ export class AuthService {
           userId: user.id,
           action: AuditAction.LOGIN_FAILED,
           entity: 'auth',
-          payload: { email, attempts: user.loginAttempts, locked: user.loginAttempts >= MAX_LOGIN_ATTEMPTS },
+          payload: { email, attempts: user.loginAttempts, locked: justLocked },
         })
+        if (justLocked) {
+          this.emailService
+            .sendAccountLocked(user.email, user.name, user.loginAttempts)
+            .catch((err: Error) => this.logger.error(`Account locked email failed: ${err.message}`))
+        }
       }
       throw new UnauthorizedException('Credenciais inválidas.')
     }
