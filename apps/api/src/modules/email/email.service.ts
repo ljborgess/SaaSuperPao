@@ -80,6 +80,13 @@ export class EmailService implements OnModuleInit {
     await this.send(email, 'Bem-vindo ao SuperPão!', html, 'welcome')
   }
 
+  async sendAccountLocked(email: string, name: string, attempts: number): Promise<void> {
+    const resetUrl = `${process.env.WEB_URL ?? 'http://localhost:3000'}/forgot-password`
+    const year = new Date().getFullYear()
+    const html = this.compileTemplate('account-locked', { name, attempts, resetUrl, year })
+    await this.send(email, 'Conta bloqueada por tentativas inválidas - SuperPão', html, 'account-locked')
+  }
+
   async sendLowStockAlert(email: string, items: Array<{ name: string; currentStock: number; minStock: number; unit?: string }>): Promise<void> {
     const year = new Date().getFullYear()
     const html = this.compileTemplate('low-stock', { items, year })

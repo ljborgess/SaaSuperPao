@@ -1,13 +1,19 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common'
+import { Injectable, ConflictException, NotFoundException, Logger } from '@nestjs/common'
 import { InjectRepository } from '@mikro-orm/nestjs'
 import { EntityRepository } from '@mikro-orm/core'
 import { User } from '@superpao/database'
 import type { CreateUserDto, UpdateUserDto, PaginationQuery } from '@superpao/shared-types'
 import { parsePagination, buildPaginatedResponse } from '@superpao/shared-utils'
+import { EmailService } from '../email/email.service'
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private readonly repo: EntityRepository<User>) {}
+  private readonly logger = new Logger(UsersService.name)
+
+  constructor(
+    @InjectRepository(User) private readonly repo: EntityRepository<User>,
+    private readonly emailService: EmailService,
+  ) {}
 
   async findAll(query: PaginationQuery) {
     const { page, limit, offset } = parsePagination(query)
@@ -33,6 +39,11 @@ export class UsersService {
     if (existing) throw new ConflictException('E-mail já cadastrado.')
     const user = this.repo.create(dto as any)
     await this.repo.getEntityManager().persistAndFlush(user)
+
+    this.emailService
+      .sendWelcome(user.email, user.name)
+      .catch((err: Error) => this.logger.error(`Welcome email failed for ${user.email}: ${err.message}`))
+
     return user
   }
 
